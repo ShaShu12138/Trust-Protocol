@@ -1,0 +1,11 @@
+{
+  "locale.name": "English",
+  "desktop.ariaLabel": "Game desktop prototype",
+  "desktop.emptyState": "NO WINDOWS OPEN",
+  "taskbar.ariaLabel": "Open windows",
+  "taskbar.languageLabel": "Language",
+  "window.one.title": "Window 01",
+  "window.two.title": "Window 02",
+  "window.minimize": "Minimize {title}",
+  "window.close": "Close {title}"
+}

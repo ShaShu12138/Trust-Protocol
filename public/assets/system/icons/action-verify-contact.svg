@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#293730" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-labelledby="title">
+  <title id="title">Verify contact</title>
+  <rect x="3" y="3" width="13" height="18" rx="2"/>
+  <circle cx="9.5" cy="8" r="2.5"/>
+  <path d="M6 15C6.5 12.5 12.5 12.5 13 15"/>
+  <path d="M16 15L18.5 17.5L22 13" stroke="#497567" stroke-width="2.2"/>
+</svg>

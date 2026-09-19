@@ -1,0 +1,11 @@
+{
+  "locale.name": "Nederlands",
+  "desktop.ariaLabel": "Prototype van het spelbureaublad",
+  "desktop.emptyState": "GEEN VENSTERS GEOPEND",
+  "taskbar.ariaLabel": "Geopende vensters",
+  "taskbar.languageLabel": "Taal",
+  "window.one.title": "Venster 01",
+  "window.two.title": "Venster 02",
+  "window.minimize": "{title} minimaliseren",
+  "window.close": "{title} sluiten"
+}

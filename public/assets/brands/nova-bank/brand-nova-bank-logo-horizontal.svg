@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 72" role="img" aria-labelledby="title desc">
+  <title id="title">Nova Bank</title>
+  <desc id="desc">Nova Bank wordmark with an abstract star symbol.</desc>
+  <g transform="translate(4 4)">
+    <circle cx="32" cy="32" r="27" fill="#234D4A"/>
+    <path d="M32 13C34.8 24 40 29.2 51 32C40 34.8 34.8 40 32 51C29.2 40 24 34.8 13 32C24 29.2 29.2 24 32 13Z" fill="#F3E9D2"/>
+    <circle cx="32" cy="32" r="4.8" fill="#B8683D"/>
+  </g>
+  <text x="80" y="47" fill="#234D4A" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700" letter-spacing="1">NOVA BANK</text>
+</svg>

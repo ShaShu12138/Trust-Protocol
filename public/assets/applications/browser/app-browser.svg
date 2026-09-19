@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Browser</title>
+  <rect x="5" y="5" width="54" height="54" rx="14" fill="#DDE4DE"/>
+  <circle cx="32" cy="32" r="18" fill="none" stroke="#293730" stroke-width="3"/>
+  <path d="M14 32H50M32 14C37 19 39 25 39 32C39 39 37 45 32 50M32 14C27 19 25 25 25 32C25 39 27 45 32 50" fill="none" stroke="#293730" stroke-width="3" stroke-linecap="round"/>
+  <path d="M19 21C25 24 39 24 45 21M19 43C25 40 39 40 45 43" fill="none" stroke="#7F968A" stroke-width="2"/>
+</svg>

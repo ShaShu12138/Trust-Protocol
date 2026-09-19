@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 72" role="img" aria-labelledby="title desc">
+  <title id="title">Trust Protocol</title>
+  <desc id="desc">Trust Protocol wordmark with two interlocking paths around a verification point.</desc>
+  <g transform="translate(4 4)">
+    <rect width="64" height="64" rx="14" fill="#293730"/>
+    <path d="M14 17H30L38 25V47H28V29H14V17Z" fill="#F2E9D7"/>
+    <path d="M50 47H34L26 39V17H36V35H50V47Z" fill="#7F968A"/>
+    <circle cx="32" cy="32" r="4.5" fill="#B8683D"/>
+  </g>
+  <text x="84" y="45" fill="#293730" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" letter-spacing="1.8">TRUST PROTOCOL</text>
+</svg>

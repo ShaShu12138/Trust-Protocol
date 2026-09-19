@@ -1,0 +1,11 @@
+{
+  "locale.name": "简体中文",
+  "desktop.ariaLabel": "游戏桌面原型",
+  "desktop.emptyState": "没有打开的窗口",
+  "taskbar.ariaLabel": "已打开的窗口",
+  "taskbar.languageLabel": "语言",
+  "window.one.title": "窗口 01",
+  "window.two.title": "窗口 02",
+  "window.minimize": "最小化{title}",
+  "window.close": "关闭{title}"
+}

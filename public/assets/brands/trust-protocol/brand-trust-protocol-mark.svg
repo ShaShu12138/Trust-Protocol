@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Trust Protocol mark</title>
+  <desc id="desc">Two interlocking paths surround a verification point.</desc>
+  <rect x="5" y="5" width="54" height="54" rx="14" fill="#293730"/>
+  <path d="M18 21H30L36 27V43H28V29H18V21Z" fill="#F2E9D7"/>
+  <path d="M46 43H34L28 37V21H36V35H46V43Z" fill="#7F968A"/>
+  <circle cx="32" cy="32" r="4" fill="#B8683D"/>
+</svg>

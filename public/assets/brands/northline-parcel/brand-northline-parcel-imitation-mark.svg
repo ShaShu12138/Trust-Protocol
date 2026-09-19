@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Northline Parcel imitation mark</title>
+  <rect width="64" height="64" rx="14" fill="#173A50"/>
+  <path d="M14 22 32 12l18 10v20L32 52 14 42z" fill="#FFF4E4"/>
+  <path d="m14 22 18 8.3L50 22M32 30.3V52" fill="none" stroke="#54B5AA" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m24 18 16 8" fill="none" stroke="#F06F5E" stroke-width="3" stroke-linecap="round"/>
+</svg>
