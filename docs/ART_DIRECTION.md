@@ -311,7 +311,7 @@ Illustration is secondary to the interactive interface. It supports characters, 
 
 ### Character portraits
 
-For the first case, plan for:
+Across the five-day campaign, plan for:
 
 - the player identity or a neutral player marker;
 - a friend or family contact;
@@ -327,7 +327,7 @@ Each important character may eventually require:
 - relieved;
 - disappointed or frustrated.
 
-The first playable case should reuse neutral portraits wherever possible. Do not commission a full expression set before dialogue testing proves it necessary.
+The first playable day should reuse neutral portraits wherever possible. Do not commission a full expression set before dialogue testing proves it necessary.
 
 ### Character portrait specification
 
@@ -339,7 +339,7 @@ The first playable case should reuse neutral portraits wherever possible. Do not
 
 ### Chapter illustrations
 
-Chapter illustrations are optional for the first playable case. If introduced:
+Day-transition illustrations are optional for the first playable milestone. If introduced:
 
 - landscape master at `2560 × 1440` or larger;
 - key content inside a central safe region;
@@ -365,7 +365,7 @@ Each recurring fictional organisation should have a small documented kit:
 - website domain;
 - email domain;
 - support phone number format;
-- legitimate and fraudulent variants used in the case.
+- legitimate and fraudulent variants used across the relevant days.
 
 ### Nova Bank working direction
 
@@ -566,12 +566,12 @@ public/
     │   ├── browser/
     │   ├── bank/
     │   └── phone/
-    ├── cases/
-    │   └── case-01/
+    ├── days/
+    │   └── day-01/
     └── shared/
 ```
 
-Assets used by only one story case belong under that case. Assets reused across cases belong under `system`, `brands`, `characters`, `applications`, or `shared`.
+New assets used by only one campaign day belong under that day. Assets reused across days belong under `system`, `brands`, `characters`, `applications`, or `shared`. Existing `cases/` folders are legacy concept-library paths and should not be renamed until references are migrated deliberately.
 
 Do not create duplicate files in multiple folders. Reference the shared asset from code.
 
@@ -594,7 +594,7 @@ portrait-maya-neutral-512.webp
 portrait-maya-concerned-512.webp
 brand-nova-bank-logo-horizontal.svg
 brand-nova-bank-mark.svg
-case-01-parcel-banner-1600.webp
+day-01-security-review-banner-1600.webp
 texture-paper-grain-512.webp
 ```
 

@@ -7,13 +7,15 @@ This document records technical decisions and boundaries for the project. Update
 The current milestone contains only:
 
 - a simulated desktop surface;
-- generic empty windows;
+- generic application windows with slotted placeholder content;
 - window dragging;
 - window focus and stacking;
 - minimizing, restoring, and closing windows through basic desktop controls.
 - a localization foundation with English, Simplified Chinese, and Dutch resources.
 
-It intentionally contains no game applications, narrative content, backend, database, or real web browsing.
+Beyond this shell it intentionally contains no backend, no database, and no real web browsing. Milestone 2 added the first real game applications (Mail, Phone) and the scripted Day 1 call flow; there is still no save system, no settings, no campaign reducer, and no Browser or Bank implementation.
+
+> This section and the tree below describe the code as it is, not as originally planned. When code changes, update them in the same change.
 
 ## Technology choices
 
@@ -38,13 +40,37 @@ Dragging uses browser Pointer Events rather than a drag-and-drop dependency. The
 ```text
 src/
 ├── main.ts
+├── apps/
+│   ├── app-registry.ts
+│   ├── mail/
+│   │   ├── mail-app.ts
+│   │   ├── mail-session.ts
+│   │   └── mail-session.test.ts
+│   └── phone/
+│       └── incoming-call.ts
+├── content/
+│   ├── content-types.ts
+│   ├── tutorial.ts
+│   ├── calls/
+│   │   └── day-01-demo-call.ts
+│   └── cases/
+│       └── case-01.ts
 ├── desktop/
 │   ├── app-window.ts
 │   ├── game-desktop.ts
 │   ├── window-manager.ts
+│   ├── window-manager.test.ts
 │   └── window-state.ts
-└── styles/
-    └── global.css
+├── localization/
+│   └── i18n.ts
+├── locales/
+│   ├── en.json
+│   ├── nl.json
+│   └── zh-CN.json
+├── styles/
+│   └── global.css
+└── ui/
+    └── dialogue-panel.ts
 ```
 
 ### `game-desktop`
@@ -71,10 +97,60 @@ It currently provides:
 - a minimum visible title-bar boundary;
 - minimize and close buttons;
 - focused and unfocused appearance.
+- pointer resizing from the lower-right corner with application-specific minimum sizes.
 
 During a drag it stores only a temporary preview position. When the drag ends, it emits `window-move`; the desktop then commits the final position.
 
-Future applications should be inserted into the window body through a slot or an explicit app-rendering layer. They should not duplicate window chrome.
+Applications are inserted into the window body through the default slot. They must not duplicate window chrome.
+
+### Application registry
+
+`src/apps/app-registry.ts` is the single catalogue of application identities and launch defaults. It currently declares Mail, Browser, Bank, and Phone. A new session starts with no open windows; players launch applications from the icons aligned along the left side of the desktop.
+
+All registered applications appear as permanent desktop icons. Activating an icon opens a closed application, restores a minimized one, or focuses an already open one. Closing every window therefore reveals the desktop and its launch icons rather than an artificial empty-state message.
+
+Desktop window state stores an `appId`. `game-desktop` resolves that ID through the registry and places the relevant application component inside `app-window`. Until real applications are implemented, the slot contains a localized placeholder.
+
+Adding an application should normally require:
+
+1. adding its stable ID and metadata to the registry;
+2. implementing a self-contained Lit component;
+3. mapping the ID to that component in the desktop application-rendering layer;
+4. adding translation keys and tests.
+
+Case data must refer to stable application and action IDs, never component class names.
+
+### Mail application
+
+`src/apps/mail/mail-app.ts` renders an inbox from `MailMessageDefinition` data. It does not contain Case 01 prose or decide whether a message is legitimate. Case content currently lives in `src/content/cases/case-01.ts` and all visible copy is referenced through translation keys.
+
+`MailSession` owns temporary mail UI state: selected message, read IDs, and the expanded sender-details panel. It returns isolated snapshots and has pure unit tests. When persistent game state is introduced, read IDs can be supplied by the game store without changing the content definition.
+
+Mail emits `mail-unread-state-changed` with the unread count and read-message IDs. The desktop retains those IDs for the current session so closing and reopening Mail does not restore a cleared unread badge. The desktop and Mail toolbar choose between `app-mail-unread.svg` and the badge-free `app-mail.svg`; future new-message effects can use the same state boundary.
+
+Mail emits semantic, bubbling events for the future game engine:
+
+```text
+mail-message-opened    { messageId }
+mail-sender-inspected  { messageId }
+mail-link-requested    { messageId, pageId }
+```
+
+Current handling in `game-desktop`: `mail-link-requested` is the only one consumed — it cancels the suspicious call and selects `DAY_01_POLICE_CALL`. `mail-message-opened` and `mail-sender-inspected` are still unhandled and are meant for evidence tracking. Browser navigation and evidence discovery must later be implemented by a controller/game reducer, not inside `mail-app`.
+
+### Dialogue presentation
+
+`src/ui/dialogue-panel.ts` is the shared modal presentation layer for tutorials, hints, and phone dialogue. It accepts a `DialoguePresentation` data object and emits `dialogue-primary` or `dialogue-secondary` with stable presentation/action IDs. It contains no case branching.
+
+The initial three-step sequence lives in `src/content/tutorial.ts`. Future hint and call definitions should use the same contract while their controllers decide which line appears next. The component provides localized copy, an optional image, progress, responsive layout, initial focus, Escape dismissal when allowed, and a Tab focus loop.
+
+`dialogue-panel` also supports a non-modal presentation mode for spoken call lines. Non-modal dialogue does not add a blocking backdrop or steal focus, allowing the persistent call card's Hang up action to remain available.
+
+### Incoming calls
+
+`src/apps/phone/incoming-call.ts` presents caller portrait, localized display name, fictional number, and call controls. It accepts `ringing` or `connected` state and emits semantic `call-accepted`, `call-declined`, and `call-ended` events. It does not choose dialogue or mutate campaign state.
+
+The current desktop starts `DAY_01_SUSPICIOUS_CALL` immediately, with no tutorial or open windows. Declining/hanging up schedules a bounded three-second retry. Advancing dialogue cycles through authored pressure lines. `mail-link-requested` cancels that sequence and selects `DAY_01_POLICE_CALL`; its final authored line has no continue action, intentionally stopping the prototype. The future day controller should own this state machine rather than `game-desktop`.
 
 ### `WindowManager`
 
@@ -88,6 +164,8 @@ Future applications should be inserted into the window body through a slot or an
 
 All methods return cloned snapshots so Lit receives a new array and reliably updates the UI.
 
+The constructor also clones its input. Neither the original array nor snapshots returned to callers can mutate the manager's authoritative state.
+
 ### Window events
 
 Windows communicate upward with bubbling, composed custom events:
@@ -95,6 +173,7 @@ Windows communicate upward with bubbling, composed custom events:
 ```text
 window-focus
 window-move
+window-resize
 window-minimize
 window-close
 ```
@@ -134,6 +213,12 @@ The pointer is captured by the title bar so dragging continues if the pointer mo
 
 Pointer movement updates a local preview. The final position is committed only on `pointerup`. This prevents the root state from being rewritten for every pixel of movement.
 
+## Resizing behavior
+
+Version 1 resizing uses only a lower-right pointer handle. During a resize, width and height remain local preview state; `window-resize` commits them on pointer release. Each application declares a minimum size in the app registry. Maximum size is clamped to the available desktop area above the taskbar.
+
+Keyboard resize alternatives, edge/corner handles other than the lower-right corner, maximize, snapping, and size persistence are deferred.
+
 ## Accessibility notes
 
 - Window controls are native buttons with accessible names.
@@ -151,26 +236,26 @@ npm install
 npm run dev
 npm run build
 npm run preview
+npm test
+npm run test:watch
 ```
 
 ## Rules for the next milestone
 
-Before adding an application:
+Before adding playable content:
 
-1. Verify dragging, focus, minimize, restore, and close in a browser.
-2. Add tests for `WindowManager` behavior.
-3. Decide whether applications are rendered through slots or an app registry.
-4. Keep application state outside `app-window`.
-5. Add only one application first; the recommended first application is Mail.
+1. Keep application state outside `app-window`.
+2. Complete Day 1 using `DAY_01_DESIGN.md`, `FIVE_DAY_CAMPAIGN.md`, and `CONTENT_SCHEMA.md`.
+3. Load campaign/day content as validated data rather than embedding story branches in components.
+4. Add fixtures for every Day 1 resolution and next-day checkpoint.
+5. Re-run desktop interaction, localization, keyboard, and build checks.
 
 ## Deferred work
 
-- window resizing;
 - maximizing and snapping;
 - persistent window positions;
-- desktop icons and an application launcher;
 - backend and API integration;
 - Storybook;
-- automated browser tests;
+- automated end-to-end browser tests;
 - application content;
 - game scenario logic.

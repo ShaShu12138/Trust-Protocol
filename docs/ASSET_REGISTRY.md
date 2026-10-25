@@ -214,7 +214,8 @@ These SVGs contain symbols only. Display names must be rendered as localized liv
 
 | Asset | Path | Status |
 |---|---|---|
-| Mail | `public/assets/applications/mail/app-mail.svg` | Approved core |
+| Mail, no unread badge | `public/assets/applications/mail/app-mail.svg` | Approved core |
+| Mail, unread badge | `public/assets/applications/mail/app-mail-unread.svg` | Approved state variant |
 | Browser | `public/assets/applications/browser/app-browser.svg` | Approved core |
 | Nova Bank | `public/assets/applications/bank/app-bank.svg` | Approved core |
 | Phone and Contacts | `public/assets/applications/phone/app-phone.svg` | Approved core |
@@ -296,6 +297,8 @@ The interiors reserve visual breathing room for portraits and live dialogue. The
 
 These images establish the chapter mood without revealing the correct answer. They use abstract interface content and avoid language-specific copy.
 
+These five images were produced for the earlier independent-case concept. After the five-day campaign redesign they are concept-library assets, not a locked one-image-per-day mapping. Friend request, bank call, and work phishing remain strong candidates for Days 2–4. Parcel fee and investment offer may be reused as secondary/background content or replaced; Day 1 and Day 5 art must follow the current campaign documents rather than these legacy folder names.
+
 ### Ending illustrations
 
 | Ending direction | Master | Runtime |
@@ -325,7 +328,7 @@ These are transparent, centered vignettes for loading, first-use, or empty state
 | Onboarding | `public/assets/onboarding/onboarding-calm-workspace-1672x941.png` | matching `.webp` |
 | Evidence board | `public/assets/evidence/evidence-board-empty-1672x941.png` | matching `.webp` |
 | Security center | `public/assets/security/security-center-hero-1672x941.png` | matching `.webp` |
-| Post-case review | `public/assets/reviews/post-case-review-1672x941.png` | matching `.webp` |
+| Campaign/day review (legacy filename) | `public/assets/reviews/post-case-review-1672x941.png` | matching `.webp` |
 
 The onboarding and security compositions reserve the left side for live localized copy. The evidence board remains text-free and can sit behind interactive evidence cards.
 

@@ -1,5 +1,22 @@
 import { LitElement, css, html } from 'lit';
 import { state } from 'lit/decorators.js';
+import {
+  APP_DEFINITIONS,
+  getAppDefinition,
+  type AppId,
+} from '../apps/app-registry';
+import '../apps/mail/mail-app';
+import type { MailUnreadStateDetail } from '../apps/mail/mail-app';
+import '../apps/phone/incoming-call';
+import type { CallStatus } from '../apps/phone/incoming-call';
+import { CASE_01_MAIL_MESSAGES } from '../content/cases/case-01';
+import {
+  DAY_01_POLICE_CALL,
+  DAY_01_POLICE_CALL_LINES,
+  DAY_01_SUSPICIOUS_CALL,
+  DAY_01_SUSPICIOUS_CALL_LINES,
+} from '../content/calls/day-01-demo-call';
+import '../ui/dialogue-panel';
 import './app-window';
 import {
   SUPPORTED_LOCALES,
@@ -14,30 +31,32 @@ import type {
   DesktopWindowState,
   WindowIdDetail,
   WindowMoveDetail,
+  WindowResizeDetail,
 } from './window-state';
 
-const INITIAL_WINDOWS: DesktopWindowState[] = [
-  {
-    id: 'window-one',
-    titleKey: 'window.one.title',
-    x: 76,
-    y: 68,
-    width: 480,
-    height: 330,
-    zIndex: 11,
+const INITIAL_APP_IDS: AppId[] = [];
+type ActiveCaller = 'suspicious' | 'police';
+
+function createAppWindow(appId: AppId, zIndex = 11): DesktopWindowState {
+  const definition = APP_DEFINITIONS[appId];
+  const bounds = definition.initialWindow;
+  if (!bounds) throw new Error(`Missing initial window bounds for ${appId}`);
+
+  return {
+    id: `${appId}-main`,
+    appId,
+    titleKey: definition.titleKey,
+    ...bounds,
+    zIndex,
     minimized: false,
-  },
-  {
-    id: 'window-two',
-    titleKey: 'window.two.title',
-    x: 420,
-    y: 190,
-    width: 420,
-    height: 290,
-    zIndex: 12,
-    minimized: false,
-  },
-];
+    minWidth: definition.minimumWindowSize.width,
+    minHeight: definition.minimumWindowSize.height,
+  };
+}
+
+const INITIAL_WINDOWS: DesktopWindowState[] = INITIAL_APP_IDS.map(
+  (appId, index) => createAppWindow(appId, 11 + index),
+);
 
 export class GameDesktop extends LitElement {
   static styles = css`
@@ -148,15 +167,71 @@ export class GameDesktop extends LitElement {
       font-size: 12px;
     }
 
-    .empty-state {
+    .desktop-icons {
       position: absolute;
-      inset: 0;
+      top: 22px;
+      left: 20px;
+      z-index: 1;
       display: grid;
+      gap: 10px;
+    }
+
+    .desktop-icon {
+      display: grid;
+      width: 82px;
+      min-height: 78px;
       place-items: center;
-      color: rgba(37, 40, 34, 0.48);
+      align-content: center;
+      gap: 6px;
+      padding: 7px 5px;
+      color: #292c27;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      text-align: center;
+    }
+
+    .desktop-icon:hover,
+    .desktop-icon:focus-visible {
+      background: rgba(255, 253, 244, 0.58);
+      border-color: rgba(51, 54, 47, 0.22);
+      outline: none;
+    }
+
+    .desktop-icon img {
+      width: 42px;
+      height: 42px;
+      filter: drop-shadow(0 3px 4px rgba(38, 40, 34, 0.16));
+    }
+
+    .desktop-icon span {
+      max-width: 76px;
+      font-size: 11px;
+      line-height: 1.15;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.75);
+    }
+
+    .application-placeholder {
+      display: grid;
+      height: 100%;
+      place-items: center;
+      padding: 32px;
+      color: rgba(37, 40, 34, 0.58);
+      text-align: center;
+    }
+
+    .application-placeholder img {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 14px;
+    }
+
+    .application-placeholder p {
+      margin: 0;
       font-size: 13px;
-      letter-spacing: 0.08em;
-      pointer-events: none;
+      letter-spacing: 0.04em;
     }
 
     @media (max-width: 700px) {
@@ -196,7 +271,22 @@ export class GameDesktop extends LitElement {
   @state()
   private locale: SupportedLocale = getInitialLocale();
 
+  @state()
+  private activeCaller: ActiveCaller = 'suspicious';
+
+  @state()
+  private callStatus: CallStatus | null = 'ringing';
+
+  @state()
+  private callLineIndex = 0;
+
+  @state()
+  private mailReadMessageIds: readonly string[] = CASE_01_MAIL_MESSAGES
+    .filter((message) => message.initiallyRead)
+    .map((message) => message.id);
+
   private resizeObserver?: ResizeObserver;
+  private repeatCallTimeout?: number;
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -204,29 +294,36 @@ export class GameDesktop extends LitElement {
     this.addEventListener('window-focus', this.handleFocus as EventListener);
     this.addEventListener('window-move', this.handleMove as EventListener);
     this.addEventListener('window-minimize', this.handleMinimize as EventListener);
+    this.addEventListener('window-resize', this.handleResize as EventListener);
     this.addEventListener('window-close', this.handleClose as EventListener);
   }
 
   disconnectedCallback(): void {
     this.resizeObserver?.disconnect();
+    if (this.repeatCallTimeout !== undefined) {
+      window.clearTimeout(this.repeatCallTimeout);
+    }
     this.removeEventListener('window-focus', this.handleFocus as EventListener);
     this.removeEventListener('window-move', this.handleMove as EventListener);
     this.removeEventListener('window-minimize', this.handleMinimize as EventListener);
+    this.removeEventListener('window-resize', this.handleResize as EventListener);
     this.removeEventListener('window-close', this.handleClose as EventListener);
     super.disconnectedCallback();
   }
 
   protected firstUpdated(): void {
     const desktop = this.renderRoot.querySelector<HTMLElement>('.desktop');
-    if (!desktop) return;
+    const taskbar = this.renderRoot.querySelector<HTMLElement>('.taskbar');
+    if (!desktop || !taskbar) return;
 
     const updateBounds = () => {
       const bounds = desktop.getBoundingClientRect();
+      const taskbarBounds = taskbar.getBoundingClientRect();
       this.desktopBounds = new DOMRectReadOnly(
         0,
         0,
         bounds.width,
-        Math.max(0, bounds.height - 72),
+        Math.max(0, taskbarBounds.top - bounds.top - 4),
       );
     };
 
@@ -246,6 +343,30 @@ export class GameDesktop extends LitElement {
         class="desktop"
         aria-label=${translate(this.locale, 'desktop.ariaLabel')}
       >
+        <nav
+          class="desktop-icons"
+          aria-label=${translate(this.locale, 'desktop.applications')}
+        >
+          ${Object.values(APP_DEFINITIONS).map((application) => {
+            const title = translate(this.locale, application.titleKey);
+            const iconPath =
+              application.id === 'mail' && this.mailUnreadCount > 0
+                ? '/assets/applications/mail/app-mail-unread.svg'
+                : application.iconPath;
+            return html`
+              <button
+                class="desktop-icon"
+                type="button"
+                aria-label=${translate(this.locale, 'desktop.openApplication', { title })}
+                @click=${() => this.openApplication(application.id)}
+              >
+                <img src=${iconPath} alt="" />
+                <span>${title}</span>
+              </button>
+            `;
+          })}
+        </nav>
+
         ${visibleWindows.map(
           (window) => html`
             <app-window
@@ -253,15 +374,9 @@ export class GameDesktop extends LitElement {
               .desktopBounds=${this.desktopBounds}
               .focused=${window.zIndex === topVisibleZ}
               .locale=${this.locale}
-            ></app-window>
+            >${this.renderApplication(window.appId)}</app-window>
           `,
         )}
-
-        ${this.windows.length === 0
-          ? html`<div class="empty-state">
-              ${translate(this.locale, 'desktop.emptyState')}
-            </div>`
-          : null}
 
         <nav
           class="taskbar"
@@ -303,6 +418,35 @@ export class GameDesktop extends LitElement {
             </select>
           </label>
         </nav>
+
+        ${this.callStatus
+          ? html`
+              <incoming-call
+                .call=${this.activeCaller === 'police'
+                  ? DAY_01_POLICE_CALL
+                  : DAY_01_SUSPICIOUS_CALL}
+                .status=${this.callStatus}
+                .locale=${this.locale}
+                @call-accepted=${this.acceptCall}
+                @call-declined=${this.endCall}
+                @call-ended=${this.endCall}
+              ></incoming-call>
+            `
+          : null}
+
+        ${this.callStatus === 'connected'
+          ? html`
+              <dialogue-panel
+                non-modal
+                .nonModal=${true}
+                .presentation=${(this.activeCaller === 'police'
+                  ? DAY_01_POLICE_CALL_LINES
+                  : DAY_01_SUSPICIOUS_CALL_LINES)[this.callLineIndex]}
+                .locale=${this.locale}
+                @dialogue-primary=${this.advanceCallDialogue}
+              ></dialogue-panel>
+            `
+          : null}
       </main>
     `;
   }
@@ -324,6 +468,13 @@ export class GameDesktop extends LitElement {
     this.windows = this.windowManager.minimize(event.detail.id);
   };
 
+  private readonly handleResize = (
+    event: CustomEvent<WindowResizeDetail>,
+  ): void => {
+    event.stopPropagation();
+    this.windows = this.windowManager.resize(event.detail.id, event.detail);
+  };
+
   private readonly handleClose = (event: CustomEvent<WindowIdDetail>): void => {
     event.stopPropagation();
     this.windows = this.windowManager.close(event.detail.id);
@@ -335,12 +486,96 @@ export class GameDesktop extends LitElement {
       : this.windowManager.focus(window.id);
   }
 
+  private openApplication(appId: AppId): void {
+    this.windows = this.windowManager.open(createAppWindow(appId));
+  }
+
+  private get mailUnreadCount(): number {
+    return CASE_01_MAIL_MESSAGES.length - this.mailReadMessageIds.length;
+  }
+
+  private handleMailUnreadState(
+    event: CustomEvent<MailUnreadStateDetail>,
+  ): void {
+    this.mailReadMessageIds = [...event.detail.readMessageIds];
+  }
+
+  private acceptCall(): void {
+    this.callLineIndex = 0;
+    this.callStatus = 'connected';
+  }
+
+  private endCall(): void {
+    this.callStatus = null;
+    if (this.activeCaller !== 'suspicious') return;
+
+    if (this.repeatCallTimeout !== undefined) {
+      window.clearTimeout(this.repeatCallTimeout);
+    }
+    this.repeatCallTimeout = window.setTimeout(() => {
+      if (this.activeCaller !== 'suspicious' || this.callStatus !== null) return;
+      this.repeatCallTimeout = undefined;
+      this.callLineIndex = 0;
+      this.callStatus = 'ringing';
+    }, 3000);
+  }
+
+  private advanceCallDialogue(): void {
+    const lines = this.activeCaller === 'police'
+      ? DAY_01_POLICE_CALL_LINES
+      : DAY_01_SUSPICIOUS_CALL_LINES;
+
+    if (this.activeCaller === 'police') {
+      this.callLineIndex = Math.min(this.callLineIndex + 1, lines.length - 1);
+      return;
+    }
+
+    this.callLineIndex = this.callLineIndex >= lines.length - 1
+      ? 2
+      : this.callLineIndex + 1;
+  }
+
+  private triggerPoliceCall(): void {
+    if (this.repeatCallTimeout !== undefined) {
+      window.clearTimeout(this.repeatCallTimeout);
+      this.repeatCallTimeout = undefined;
+    }
+    this.activeCaller = 'police';
+    this.callLineIndex = 0;
+    this.callStatus = 'ringing';
+  }
+
   private changeLocale(event: Event): void {
     const selectedLocale = (event.currentTarget as HTMLSelectElement).value;
     if (!isSupportedLocale(selectedLocale)) return;
 
     this.locale = selectedLocale;
     persistLocale(selectedLocale);
+  }
+
+  private renderApplication(appId: AppId) {
+    if (appId === 'mail') {
+      return html`
+        <mail-app
+          .messages=${CASE_01_MAIL_MESSAGES}
+          .readMessageIds=${this.mailReadMessageIds}
+          .locale=${this.locale}
+          @mail-unread-state-changed=${this.handleMailUnreadState}
+          @mail-link-requested=${this.triggerPoliceCall}
+        ></mail-app>
+      `;
+    }
+
+    const definition = getAppDefinition(appId);
+
+    return html`
+      <div class="application-placeholder">
+        <div>
+          <img src=${definition.iconPath} alt="" />
+          <p>${translate(this.locale, 'apps.placeholder')}</p>
+        </div>
+      </div>
+    `;
   }
 }
 

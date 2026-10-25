@@ -1,0 +1,76 @@
+import type { IncomingCallPresentation } from '../../apps/phone/incoming-call';
+import type { DialoguePresentation } from '../../ui/dialogue-panel';
+
+const unknownPortrait = '/assets/system/icons/contact-unknown.svg';
+
+export const DAY_01_SUSPICIOUS_CALL: IncomingCallPresentation = {
+  id: 'call.day01.suspicious-bank-support',
+  phoneNumber: '+31 20 555 0148',
+  portraitPath: unknownPortrait,
+};
+
+export const DAY_01_POLICE_CALL: IncomingCallPresentation = {
+  id: 'call.day01.police-warning',
+  callerNameKey: 'day01.call.police.name',
+  phoneNumber: '+31 88 662 2880',
+  portraitPath: '/assets/system/icons/system-notification.svg',
+};
+
+export const DAY_01_SUSPICIOUS_CALL_LINES: readonly DialoguePresentation[] = [
+  {
+    id: 'dialogue.day01.suspicious.intro',
+    kind: 'call',
+    eyebrowKey: 'dialogue.kind.call',
+    speakerKey: 'day01.call.unknownSpeaker',
+    bodyKey: 'day01.call.suspicious.intro',
+    imagePath: unknownPortrait,
+    primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
+  },
+  {
+    id: 'dialogue.day01.suspicious.instruction',
+    kind: 'call',
+    eyebrowKey: 'dialogue.kind.call',
+    speakerKey: 'day01.call.unknownSpeaker',
+    bodyKey: 'day01.call.suspicious.instruction',
+    imagePath: unknownPortrait,
+    primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
+  },
+  {
+    id: 'dialogue.day01.suspicious.nag-one',
+    kind: 'call',
+    eyebrowKey: 'dialogue.kind.call',
+    speakerKey: 'day01.call.unknownSpeaker',
+    bodyKey: 'day01.call.suspicious.nagOne',
+    imagePath: unknownPortrait,
+    primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
+  },
+  {
+    id: 'dialogue.day01.suspicious.nag-two',
+    kind: 'call',
+    eyebrowKey: 'dialogue.kind.call',
+    speakerKey: 'day01.call.unknownSpeaker',
+    bodyKey: 'day01.call.suspicious.nagTwo',
+    imagePath: unknownPortrait,
+    primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
+  },
+];
+
+export const DAY_01_POLICE_CALL_LINES: readonly DialoguePresentation[] = [
+  {
+    id: 'dialogue.day01.police.stop',
+    kind: 'call',
+    eyebrowKey: 'dialogue.kind.call',
+    speakerKey: 'day01.call.police.name',
+    bodyKey: 'day01.call.police.stop',
+    imagePath: '/assets/system/icons/system-notification.svg',
+    primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
+  },
+  {
+    id: 'dialogue.day01.police.explanation',
+    kind: 'call',
+    eyebrowKey: 'dialogue.kind.call',
+    speakerKey: 'day01.call.police.name',
+    bodyKey: 'day01.call.police.explanation',
+    imagePath: '/assets/system/icons/system-notification.svg',
+  },
+];

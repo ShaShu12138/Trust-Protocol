@@ -39,3 +39,8 @@ Desktop.ini
 tmp/
 temp/
 *.tmp
+
+# Personal career research — not part of the game, kept out of the public repo
+docs/career/
+.scratch/
+information/

@@ -1,16 +1,19 @@
 import type {
   DesktopWindowState,
   WindowPosition,
+  WindowSize,
 } from './window-state';
 
 const BASE_Z_INDEX = 10;
 
 export class WindowManager {
   private nextZIndex = BASE_Z_INDEX;
+  private windows: DesktopWindowState[];
 
-  constructor(private windows: DesktopWindowState[]) {
+  constructor(windows: DesktopWindowState[]) {
+    this.windows = windows.map((window) => ({ ...window }));
     this.nextZIndex =
-      Math.max(BASE_Z_INDEX, ...windows.map((window) => window.zIndex)) + 1;
+      Math.max(BASE_Z_INDEX, ...this.windows.map((window) => window.zIndex)) + 1;
   }
 
   get snapshot(): DesktopWindowState[] {
@@ -27,6 +30,17 @@ export class WindowManager {
     return this.snapshot;
   }
 
+  resize(id: string, size: WindowSize): DesktopWindowState[] {
+    const window = this.windows.find((candidate) => candidate.id === id);
+    if (!window) return this.snapshot;
+
+    this.update(id, {
+      width: Math.max(window.minWidth, size.width),
+      height: Math.max(window.minHeight, size.height),
+    });
+    return this.snapshot;
+  }
+
   minimize(id: string): DesktopWindowState[] {
     this.update(id, { minimized: true });
     return this.snapshot;
@@ -34,6 +48,19 @@ export class WindowManager {
 
   restore(id: string): DesktopWindowState[] {
     this.update(id, { minimized: false, zIndex: this.nextZIndex++ });
+    return this.snapshot;
+  }
+
+  open(window: DesktopWindowState): DesktopWindowState[] {
+    const existing = this.windows.find((candidate) => candidate.id === window.id);
+    if (existing) {
+      return existing.minimized ? this.restore(window.id) : this.focus(window.id);
+    }
+
+    this.windows = [
+      ...this.windows,
+      { ...window, minimized: false, zIndex: this.nextZIndex++ },
+    ];
     return this.snapshot;
   }
 

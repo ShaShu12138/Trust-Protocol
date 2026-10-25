@@ -8,6 +8,7 @@ import type {
   DesktopWindowState,
   WindowIdDetail,
   WindowMoveDetail,
+  WindowResizeDetail,
 } from './window-state';
 
 interface DragSession {
@@ -16,6 +17,14 @@ interface DragSession {
   pointerStartY: number;
   windowStartX: number;
   windowStartY: number;
+}
+
+interface ResizeSession {
+  pointerId: number;
+  pointerStartX: number;
+  pointerStartY: number;
+  windowStartWidth: number;
+  windowStartHeight: number;
 }
 
 export class AppWindow extends LitElement {
@@ -29,6 +38,7 @@ export class AppWindow extends LitElement {
 
     .window {
       position: absolute;
+      box-sizing: border-box;
       display: grid;
       grid-template-rows: 42px minmax(0, 1fr);
       min-width: 260px;
@@ -118,6 +128,27 @@ export class AppWindow extends LitElement {
       background-size: 20px 20px;
     }
 
+    .resize-handle {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      background:
+        linear-gradient(135deg, transparent 48%, rgba(57, 62, 53, 0.3) 49%, rgba(57, 62, 53, 0.3) 56%, transparent 57%) 8px 8px / 8px 8px no-repeat,
+        linear-gradient(135deg, transparent 48%, rgba(57, 62, 53, 0.52) 49%, rgba(57, 62, 53, 0.52) 56%, transparent 57%) 12px 12px / 8px 8px no-repeat;
+      border: 0;
+      cursor: nwse-resize;
+      touch-action: none;
+    }
+
+    ::slotted(*) {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .window {
         transition: none;
@@ -143,17 +174,26 @@ export class AppWindow extends LitElement {
   @state()
   private previewY: number | null = null;
 
+  @state()
+  private previewWidth: number | null = null;
+
+  @state()
+  private previewHeight: number | null = null;
+
   private dragSession: DragSession | null = null;
+  private resizeSession: ResizeSession | null = null;
 
   render() {
     const x = this.previewX ?? this.windowState.x;
     const y = this.previewY ?? this.windowState.y;
+    const width = this.previewWidth ?? this.windowState.width;
+    const height = this.previewHeight ?? this.windowState.height;
     const title = translate(this.locale, this.windowState.titleKey);
 
     return html`
       <section
         class="window ${this.focused ? 'focused' : ''}"
-        style=${`width:${this.windowState.width}px;height:${this.windowState.height}px;transform:translate3d(${x}px,${y}px,0);z-index:${this.windowState.zIndex};`}
+        style=${`width:${width}px;height:${height}px;transform:translate3d(${x}px,${y}px,0);z-index:${this.windowState.zIndex};`}
         aria-label=${title}
         @pointerdown=${this.handleWindowPointerDown}
       >
@@ -186,7 +226,15 @@ export class AppWindow extends LitElement {
             </button>
           </div>
         </header>
-        <div class="window-body" aria-hidden="true"></div>
+        <div class="window-body"><slot></slot></div>
+        <div
+          class="resize-handle"
+          aria-hidden="true"
+          @pointerdown=${this.startResize}
+          @pointermove=${this.continueResize}
+          @pointerup=${this.endResize}
+          @pointercancel=${this.cancelResize}
+        ></div>
       </section>
     `;
   }
@@ -270,6 +318,84 @@ export class AppWindow extends LitElement {
     this.dragSession = null;
     this.previewX = null;
     this.previewY = null;
+    this.requestUpdate();
+  }
+
+  private startResize(event: PointerEvent): void {
+    if (event.button !== 0) return;
+
+    event.stopPropagation();
+    this.handleWindowPointerDown();
+    this.resizeSession = {
+      pointerId: event.pointerId,
+      pointerStartX: event.clientX,
+      pointerStartY: event.clientY,
+      windowStartWidth: this.windowState.width,
+      windowStartHeight: this.windowState.height,
+    };
+    this.previewWidth = this.windowState.width;
+    this.previewHeight = this.windowState.height;
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
+  private continueResize(event: PointerEvent): void {
+    if (!this.resizeSession || event.pointerId !== this.resizeSession.pointerId) {
+      return;
+    }
+
+    const maximumWidth = Math.max(
+      this.windowState.minWidth,
+      this.desktopBounds.width - this.windowState.x,
+    );
+    const maximumHeight = Math.max(
+      this.windowState.minHeight,
+      this.desktopBounds.height - this.windowState.y,
+    );
+    const proposedWidth =
+      this.resizeSession.windowStartWidth +
+      event.clientX -
+      this.resizeSession.pointerStartX;
+    const proposedHeight =
+      this.resizeSession.windowStartHeight +
+      event.clientY -
+      this.resizeSession.pointerStartY;
+
+    this.previewWidth = Math.min(
+      maximumWidth,
+      Math.max(this.windowState.minWidth, proposedWidth),
+    );
+    this.previewHeight = Math.min(
+      maximumHeight,
+      Math.max(this.windowState.minHeight, proposedHeight),
+    );
+  }
+
+  private endResize(event: PointerEvent): void {
+    if (!this.resizeSession || event.pointerId !== this.resizeSession.pointerId) {
+      return;
+    }
+
+    const target = event.currentTarget as HTMLElement;
+    if (target.hasPointerCapture(event.pointerId)) {
+      target.releasePointerCapture(event.pointerId);
+    }
+
+    this.emitWindowEvent<WindowResizeDetail>('window-resize', {
+      id: this.windowState.id,
+      width: this.previewWidth ?? this.windowState.width,
+      height: this.previewHeight ?? this.windowState.height,
+    });
+    this.clearResize();
+  }
+
+  private cancelResize(): void {
+    this.clearResize();
+  }
+
+  private clearResize(): void {
+    this.resizeSession = null;
+    this.previewWidth = null;
+    this.previewHeight = null;
     this.requestUpdate();
   }
 
