@@ -1,7 +1,8 @@
 import type { IncomingCallPresentation } from '../../apps/phone/incoming-call';
 import type { DialoguePresentation } from '../../ui/dialogue-panel';
+import { assetUrl } from '../../ui/asset-url';
 
-const unknownPortrait = '/assets/system/icons/contact-unknown.svg';
+const unknownPortrait = assetUrl('/assets/system/icons/contact-unknown.svg');
 
 export const DAY_01_SUSPICIOUS_CALL: IncomingCallPresentation = {
   id: 'call.day01.suspicious-bank-support',
@@ -13,7 +14,7 @@ export const DAY_01_POLICE_CALL: IncomingCallPresentation = {
   id: 'call.day01.police-warning',
   callerNameKey: 'day01.call.police.name',
   phoneNumber: '+31 88 662 2880',
-  portraitPath: '/assets/system/icons/system-notification.svg',
+  portraitPath: assetUrl('/assets/system/icons/system-notification.svg'),
 };
 
 export const DAY_01_SUSPICIOUS_CALL_LINES: readonly DialoguePresentation[] = [
@@ -62,7 +63,7 @@ export const DAY_01_POLICE_CALL_LINES: readonly DialoguePresentation[] = [
     eyebrowKey: 'dialogue.kind.call',
     speakerKey: 'day01.call.police.name',
     bodyKey: 'day01.call.police.stop',
-    imagePath: '/assets/system/icons/system-notification.svg',
+    imagePath: assetUrl('/assets/system/icons/system-notification.svg'),
     primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
   },
   {
@@ -71,6 +72,6 @@ export const DAY_01_POLICE_CALL_LINES: readonly DialoguePresentation[] = [
     eyebrowKey: 'dialogue.kind.call',
     speakerKey: 'day01.call.police.name',
     bodyKey: 'day01.call.police.explanation',
-    imagePath: '/assets/system/icons/system-notification.svg',
+    imagePath: assetUrl('/assets/system/icons/system-notification.svg'),
   },
 ];

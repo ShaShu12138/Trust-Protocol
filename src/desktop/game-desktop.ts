@@ -16,7 +16,9 @@ import {
   DAY_01_SUSPICIOUS_CALL,
   DAY_01_SUSPICIOUS_CALL_LINES,
 } from '../content/calls/day-01-demo-call';
+import { DESKTOP_TUTORIAL } from '../content/tutorial';
 import '../ui/dialogue-panel';
+import { assetUrl } from '../ui/asset-url';
 import './app-window';
 import {
   SUPPORTED_LOCALES,
@@ -275,7 +277,10 @@ export class GameDesktop extends LitElement {
   private activeCaller: ActiveCaller = 'suspicious';
 
   @state()
-  private callStatus: CallStatus | null = 'ringing';
+  private callStatus: CallStatus | null = null;
+
+  @state()
+  private tutorialStep: number | null = 0;
 
   @state()
   private callLineIndex = 0;
@@ -351,7 +356,7 @@ export class GameDesktop extends LitElement {
             const title = translate(this.locale, application.titleKey);
             const iconPath =
               application.id === 'mail' && this.mailUnreadCount > 0
-                ? '/assets/applications/mail/app-mail-unread.svg'
+                ? assetUrl('/assets/applications/mail/app-mail-unread.svg')
                 : application.iconPath;
             return html`
               <button
@@ -418,6 +423,17 @@ export class GameDesktop extends LitElement {
             </select>
           </label>
         </nav>
+
+        ${this.tutorialStep !== null
+          ? html`
+              <dialogue-panel
+                .presentation=${DESKTOP_TUTORIAL[this.tutorialStep]}
+                .locale=${this.locale}
+                @dialogue-primary=${this.advanceTutorial}
+                @dialogue-secondary=${this.finishTutorial}
+              ></dialogue-panel>
+            `
+          : null}
 
         ${this.callStatus
           ? html`
@@ -499,6 +515,23 @@ export class GameDesktop extends LitElement {
   ): void {
     this.mailReadMessageIds = [...event.detail.readMessageIds];
   }
+
+  private readonly advanceTutorial = (): void => {
+    if (this.tutorialStep === null) return;
+    const nextStep = this.tutorialStep + 1;
+    if (nextStep >= DESKTOP_TUTORIAL.length) {
+      this.finishTutorial();
+      return;
+    }
+    this.tutorialStep = nextStep;
+  };
+
+  private readonly finishTutorial = (): void => {
+    this.tutorialStep = null;
+    if (this.callStatus !== null) return;
+    this.callLineIndex = 0;
+    this.callStatus = 'ringing';
+  };
 
   private acceptCall(): void {
     this.callLineIndex = 0;

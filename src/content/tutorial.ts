@@ -1,6 +1,7 @@
 import type { DialoguePresentation } from '../ui/dialogue-panel';
+import { assetUrl } from '../ui/asset-url';
 
-const tutorialImage = '/assets/brands/trust-protocol/brand-trust-protocol-mark.svg';
+const tutorialImage = assetUrl('/assets/brands/trust-protocol/brand-trust-protocol-mark.svg');
 
 export const DESKTOP_TUTORIAL: readonly DialoguePresentation[] = [
   {

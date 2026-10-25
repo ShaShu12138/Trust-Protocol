@@ -6,6 +6,7 @@ import {
   translate,
   type SupportedLocale,
 } from '../../localization/i18n';
+import { assetUrl } from '../../ui/asset-url';
 import { MailSession, type MailSessionSnapshot } from './mail-session';
 
 interface MailActionDetail {
@@ -92,8 +93,8 @@ export class MailApp extends LitElement {
         <header class="toolbar">
           <img
             src=${unreadCount > 0
-              ? '/assets/applications/mail/app-mail-unread.svg'
-              : '/assets/applications/mail/app-mail.svg'}
+              ? assetUrl('/assets/applications/mail/app-mail-unread.svg')
+              : assetUrl('/assets/applications/mail/app-mail.svg')}
             alt=""
           />
           <strong>${translate(this.locale, 'mail.inbox')}</strong>
