@@ -1,5 +1,9 @@
 # Trust Protocol — Campaign State and Save Design
 
+> 最新第一天规则：以 [DAY_01_DESIGN.md](DAY_01_DESIGN.md) 的线性版本为准。必须点击链接触发警方，信息在故事开始前已泄露，官网核验后标注邮件即结束。此前第一天自由调查、转账补救、任意结束及 v1 存档描述已被替换；当前使用 v2 存档，28 项测试通过。
+
+> Implementation boundary (2026-10-26): the standalone Day 1 playtest uses `trust-protocol.day-one.v1` and the validated `DayOneState` in `src/game/day-one-session.ts`. This document remains the full-campaign target; the playtest does not claim to implement that schema or cross-day saves. See [DAY_01_PLAYTEST.md](DAY_01_PLAYTEST.md).
+
 ## Purpose
 
 This document defines runtime ownership, day progression, consequences, automatic saving, restoration, and migration for the five-day campaign.

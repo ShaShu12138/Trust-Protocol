@@ -1,5 +1,9 @@
 # Trust Protocol — Code Architecture
 
+> 最新第一天规则：以 [DAY_01_DESIGN.md](DAY_01_DESIGN.md) 的线性版本为准。必须点击链接触发警方，信息在故事开始前已泄露，官网核验后标注邮件即结束。此前第一天自由调查、转账补救、任意结束及 v1 存档描述已被替换；当前使用 v2 存档，28 项测试通过。
+
+> 2026-10-26: Day 1 now uses `src/game/day-one-session.ts` for pure transitions/save validation and `src/apps/day-one-panel.ts` for local Browser/Bank/Phone content and review. The desktop delegates story decisions to the session, owns storage and retry timers, and consumes Mail events. See [DAY_01_PLAYTEST.md](DAY_01_PLAYTEST.md). Earlier prototype-only status statements below are historical and do not describe this completed Day 1 slice.
+
 ## Purpose
 
 This document records technical decisions and boundaries for the project. Update it whenever the architecture, development workflow, or technical scope changes.

@@ -2,21 +2,20 @@ import { LitElement, css, html } from 'lit';
 import { state } from 'lit/decorators.js';
 import {
   APP_DEFINITIONS,
-  getAppDefinition,
   type AppId,
 } from '../apps/app-registry';
 import '../apps/mail/mail-app';
 import type { MailUnreadStateDetail } from '../apps/mail/mail-app';
 import '../apps/phone/incoming-call';
-import type { CallStatus } from '../apps/phone/incoming-call';
 import { CASE_01_MAIL_MESSAGES } from '../content/cases/case-01';
 import {
   DAY_01_POLICE_CALL,
-  DAY_01_POLICE_CALL_LINES,
   DAY_01_SUSPICIOUS_CALL,
   DAY_01_SUSPICIOUS_CALL_LINES,
 } from '../content/calls/day-01-demo-call';
-import { DESKTOP_TUTORIAL } from '../content/tutorial';
+import '../apps/day-one-panel';
+import { newDayOne, stepDayOne, parseDayOne, DAY_ONE_SAVE_KEY, type DayAction } from '../game/day-one-session';
+import type { DialoguePresentation } from '../ui/dialogue-panel';
 import '../ui/dialogue-panel';
 import { assetUrl } from '../ui/asset-url';
 import './app-window';
@@ -37,7 +36,7 @@ import type {
 } from './window-state';
 
 const INITIAL_APP_IDS: AppId[] = [];
-type ActiveCaller = 'suspicious' | 'police';
+const DAY_ONE_MAIL_MESSAGES = CASE_01_MAIL_MESSAGES.filter(message => message.id === 'mail.nova-security-review');
 
 function createAppWindow(appId: AppId, zIndex = 11): DesktopWindowState {
   const definition = APP_DEFINITIONS[appId];
@@ -94,6 +93,7 @@ export class GameDesktop extends LitElement {
     }
 
     .taskbar {
+      overflow-x: auto;
       position: absolute;
       right: 14px;
       bottom: 12px;
@@ -215,27 +215,6 @@ export class GameDesktop extends LitElement {
       text-shadow: 0 1px 2px rgba(255, 255, 255, 0.75);
     }
 
-    .application-placeholder {
-      display: grid;
-      height: 100%;
-      place-items: center;
-      padding: 32px;
-      color: rgba(37, 40, 34, 0.58);
-      text-align: center;
-    }
-
-    .application-placeholder img {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 14px;
-    }
-
-    .application-placeholder p {
-      margin: 0;
-      font-size: 13px;
-      letter-spacing: 0.04em;
-    }
-
     @media (max-width: 700px) {
       :host {
         min-height: 420px;
@@ -273,18 +252,9 @@ export class GameDesktop extends LitElement {
   @state()
   private locale: SupportedLocale = getInitialLocale();
 
-  @state()
-  private activeCaller: ActiveCaller = 'suspicious';
-
-  @state()
-  private callStatus: CallStatus | null = null;
-
-  @state()
-  private tutorialStep: number | null = 0;
-
-  @state()
-  private callLineIndex = 0;
-
+  @state() private day = newDayOne();
+  @state() private restartConfirm = false;
+  @state() private storageWarning: 'd1.storage' | 'd1.corrupt' | null = null;
   @state()
   private mailReadMessageIds: readonly string[] = CASE_01_MAIL_MESSAGES
     .filter((message) => message.initiallyRead)
@@ -292,10 +262,20 @@ export class GameDesktop extends LitElement {
 
   private resizeObserver?: ResizeObserver;
   private repeatCallTimeout?: number;
+  private endingTimeout?: number;
 
   connectedCallback(): void {
     super.connectedCallback();
     persistLocale(this.locale);
+    try {
+      const raw = window.localStorage.getItem(DAY_ONE_SAVE_KEY);
+      if (raw) {
+        const restored = parseDayOne(raw);
+        if (restored) this.day = restored;
+        else this.storageWarning = 'd1.corrupt';
+      }
+    } catch { this.storageWarning = 'd1.storage'; }
+    this.scheduleStory();
     this.addEventListener('window-focus', this.handleFocus as EventListener);
     this.addEventListener('window-move', this.handleMove as EventListener);
     this.addEventListener('window-minimize', this.handleMinimize as EventListener);
@@ -305,6 +285,7 @@ export class GameDesktop extends LitElement {
 
   disconnectedCallback(): void {
     this.resizeObserver?.disconnect();
+    window.clearTimeout(this.endingTimeout);
     if (this.repeatCallTimeout !== undefined) {
       window.clearTimeout(this.repeatCallTimeout);
     }
@@ -402,6 +383,7 @@ export class GameDesktop extends LitElement {
               </button>
             `,
           )}
+          <button class="task-button" @click=${() => { this.restartConfirm = true; }}>${translate(this.locale, 'd1.restart')}</button>
           <label class="language-control">
             <span class="language-label">
               ${translate(this.locale, 'taskbar.languageLabel')}
@@ -424,45 +406,23 @@ export class GameDesktop extends LitElement {
           </label>
         </nav>
 
-        ${this.tutorialStep !== null
-          ? html`
-              <dialogue-panel
-                .presentation=${DESKTOP_TUTORIAL[this.tutorialStep]}
-                .locale=${this.locale}
-                @dialogue-primary=${this.advanceTutorial}
-                @dialogue-secondary=${this.finishTutorial}
-              ></dialogue-panel>
-            `
-          : null}
-
-        ${this.callStatus
-          ? html`
-              <incoming-call
-                .call=${this.activeCaller === 'police'
-                  ? DAY_01_POLICE_CALL
-                  : DAY_01_SUSPICIOUS_CALL}
-                .status=${this.callStatus}
-                .locale=${this.locale}
-                @call-accepted=${this.acceptCall}
-                @call-declined=${this.endCall}
-                @call-ended=${this.endCall}
-              ></incoming-call>
-            `
-          : null}
-
-        ${this.callStatus === 'connected'
-          ? html`
-              <dialogue-panel
-                non-modal
-                .nonModal=${true}
-                .presentation=${(this.activeCaller === 'police'
-                  ? DAY_01_POLICE_CALL_LINES
-                  : DAY_01_SUSPICIOUS_CALL_LINES)[this.callLineIndex]}
-                .locale=${this.locale}
-                @dialogue-primary=${this.advanceCallDialogue}
-              ></dialogue-panel>
-            `
-          : null}
+        ${this.storageWarning ? html`<p role="status" style="position:absolute;top:0;right:16px;max-width:420px;background:#fff4d9;padding:10px;z-index:11000">${translate(this.locale, this.storageWarning)}</p>` : null}
+        ${this.day.call ? html`
+          <incoming-call .call=${this.callPresentation} .status=${this.day.call} .locale=${this.locale}
+            @call-accepted=${() => this.dispatchDay('answer')} @call-declined=${() => this.dispatchDay('hangup')} @call-ended=${() => this.dispatchDay('hangup')}></incoming-call>
+        ` : null}
+        ${this.day.call === 'connected' || (['police', 'callback'].includes(this.day.phase) && !this.day.call) ? html`
+          <dialogue-panel non-modal .nonModal=${true} .presentation=${this.callDialogue} .locale=${this.locale}
+            @dialogue-primary=${() => this.dispatchDay('next')}></dialogue-panel>
+        ` : null}
+        ${this.day.phase === 'review' && !this.restartConfirm ? html`
+          <day-one-panel mode="review" .session=${this.day} .locale=${this.locale}
+            @day-restart=${() => { this.restartConfirm = true; }}></day-one-panel>
+        ` : null}
+        ${this.restartConfirm ? html`
+          <dialogue-panel .locale=${this.locale} .presentation=${this.message('d1.restart.title', 'd1.restart.body', 'd1.restart', 'd1.no')}
+            @dialogue-primary=${this.restartDay} @dialogue-secondary=${() => { this.restartConfirm = false; }}></dialogue-panel>
+        ` : null}
       </main>
     `;
   }
@@ -503,11 +463,16 @@ export class GameDesktop extends LitElement {
   }
 
   private openApplication(appId: AppId): void {
-    this.windows = this.windowManager.open(createAppWindow(appId));
+    const window = createAppWindow(appId);
+    window.width = Math.max(window.minWidth, Math.min(window.width, this.desktopBounds.width - 24));
+    window.height = Math.max(window.minHeight, Math.min(window.height, this.desktopBounds.height - 24));
+    window.x = Math.max(0, Math.min(window.x, this.desktopBounds.width - window.width - 12));
+    window.y = Math.max(0, Math.min(window.y, this.desktopBounds.height - window.height - 12));
+    this.windows = this.windowManager.open(window);
   }
 
   private get mailUnreadCount(): number {
-    return CASE_01_MAIL_MESSAGES.length - this.mailReadMessageIds.length;
+    return this.mailReadMessageIds.includes('mail.nova-security-review') ? 0 : 1;
   }
 
   private handleMailUnreadState(
@@ -516,67 +481,63 @@ export class GameDesktop extends LitElement {
     this.mailReadMessageIds = [...event.detail.readMessageIds];
   }
 
-  private readonly advanceTutorial = (): void => {
-    if (this.tutorialStep === null) return;
-    const nextStep = this.tutorialStep + 1;
-    if (nextStep >= DESKTOP_TUTORIAL.length) {
-      this.finishTutorial();
-      return;
+  private message(title: DialoguePresentation['speakerKey'], body: DialoguePresentation['bodyKey'], primary: DialoguePresentation['speakerKey'], secondary?: DialoguePresentation['speakerKey']): DialoguePresentation {
+    return { id: title, kind: 'hint', eyebrowKey: 'd1.day', speakerKey: title, bodyKey: body,
+      primaryAction: { id: 'confirm', labelKey: primary },
+      secondaryAction: secondary ? { id: 'cancel', labelKey: secondary } : undefined };
+  }
+
+
+  private get callPresentation() {
+    return ['police', 'callback'].includes(this.day.phase) ? DAY_01_POLICE_CALL : DAY_01_SUSPICIOUS_CALL;
+  }
+  private get callDialogue(): DialoguePresentation {
+    if (this.day.phase === 'callback') return { id: 'callback', kind: 'call', eyebrowKey: 'dialogue.kind.call', speakerKey: 'day01.call.police.name', bodyKey: `report.feedback.${this.day.reason!}`, primaryAction: { id: 'continue', labelKey: 'dialogue.continue' } };
+    if (this.day.phase !== 'police') return DAY_01_SUSPICIOUS_CALL_LINES[this.day.line];
+    const lines = ['day01.call.police.stop', 'linear.police.leak', 'linear.police.method', 'linear.police.mark'] as const;
+    return { id: 'police.' + this.day.line, kind: 'call', eyebrowKey: 'dialogue.kind.call',
+      speakerKey: 'day01.call.police.name', bodyKey: lines[this.day.line],
+      primaryAction: {id:'continue', labelKey: this.day.line === 3 ? 'linear.check' : 'dialogue.continue'} };
+  }
+
+  private persistDay(): void {
+    try { window.localStorage.setItem(DAY_ONE_SAVE_KEY, JSON.stringify(this.day)); }
+    catch { this.storageWarning = 'd1.storage'; }
+  }
+
+
+  private scheduleStory(): void {
+    window.clearTimeout(this.repeatCallTimeout);
+    window.clearTimeout(this.endingTimeout);
+    if (['intro', 'email'].includes(this.day.phase) && !this.day.call && !this.day.retryUsed) {
+      this.repeatCallTimeout = window.setTimeout(() => this.dispatchDay('retry'), 3000);
     }
-    this.tutorialStep = nextStep;
+    if (this.day.phase === 'stamped') {
+      this.endingTimeout = window.setTimeout(() => this.dispatchDay('callback'), 3500);
+    }
+  }
+  private dispatchDay(action: DayAction): void {
+    const previous = this.day;
+    this.day = stepDayOne(previous, action);
+    this.persistDay();
+    this.scheduleStory();
+  }
+
+  private readonly restartDay = (): void => {
+    if (this.repeatCallTimeout !== undefined) window.clearTimeout(this.repeatCallTimeout);
+    for (const window of this.windows) this.windowManager.close(window.id);
+    this.windows = this.windowManager.snapshot;
+    this.day = newDayOne();
+    this.mailReadMessageIds = CASE_01_MAIL_MESSAGES.filter(m => m.initiallyRead).map(m => m.id);
+    this.restartConfirm = false;
+    this.scheduleStory();
+    this.persistDay();
   };
 
-  private readonly finishTutorial = (): void => {
-    this.tutorialStep = null;
-    if (this.callStatus !== null) return;
-    this.callLineIndex = 0;
-    this.callStatus = 'ringing';
+  private readonly followMailLink = (event: CustomEvent<{ pageId: string }>): void => {
+    if (event.detail.pageId !== 'page.nova-review-fake') return;
+    this.dispatchDay('link');
   };
-
-  private acceptCall(): void {
-    this.callLineIndex = 0;
-    this.callStatus = 'connected';
-  }
-
-  private endCall(): void {
-    this.callStatus = null;
-    if (this.activeCaller !== 'suspicious') return;
-
-    if (this.repeatCallTimeout !== undefined) {
-      window.clearTimeout(this.repeatCallTimeout);
-    }
-    this.repeatCallTimeout = window.setTimeout(() => {
-      if (this.activeCaller !== 'suspicious' || this.callStatus !== null) return;
-      this.repeatCallTimeout = undefined;
-      this.callLineIndex = 0;
-      this.callStatus = 'ringing';
-    }, 3000);
-  }
-
-  private advanceCallDialogue(): void {
-    const lines = this.activeCaller === 'police'
-      ? DAY_01_POLICE_CALL_LINES
-      : DAY_01_SUSPICIOUS_CALL_LINES;
-
-    if (this.activeCaller === 'police') {
-      this.callLineIndex = Math.min(this.callLineIndex + 1, lines.length - 1);
-      return;
-    }
-
-    this.callLineIndex = this.callLineIndex >= lines.length - 1
-      ? 2
-      : this.callLineIndex + 1;
-  }
-
-  private triggerPoliceCall(): void {
-    if (this.repeatCallTimeout !== undefined) {
-      window.clearTimeout(this.repeatCallTimeout);
-      this.repeatCallTimeout = undefined;
-    }
-    this.activeCaller = 'police';
-    this.callLineIndex = 0;
-    this.callStatus = 'ringing';
-  }
 
   private changeLocale(event: Event): void {
     const selectedLocale = (event.currentTarget as HTMLSelectElement).value;
@@ -590,25 +551,23 @@ export class GameDesktop extends LitElement {
     if (appId === 'mail') {
       return html`
         <mail-app
-          .messages=${CASE_01_MAIL_MESSAGES}
+          .messages=${DAY_ONE_MAIL_MESSAGES}
           .readMessageIds=${this.mailReadMessageIds}
           .locale=${this.locale}
+          .linksEnabled=${this.day.phase === 'email'}
+          .markingEnabled=${this.day.phase === 'verify'}
+          .markedMessageId=${['stamped', 'callback', 'review'].includes(this.day.phase) ? 'mail.nova-security-review' : ''}
+          @mail-message-flagged=${(event: CustomEvent<{messageId: string; reason: DayAction}>) => {
+            if (event.detail.messageId === 'mail.nova-security-review') this.dispatchDay(event.detail.reason);
+          }}
           @mail-unread-state-changed=${this.handleMailUnreadState}
-          @mail-link-requested=${this.triggerPoliceCall}
+          @mail-link-requested=${this.followMailLink}
         ></mail-app>
       `;
     }
 
-    const definition = getAppDefinition(appId);
-
-    return html`
-      <div class="application-placeholder">
-        <div>
-          <img src=${definition.iconPath} alt="" />
-          <p>${translate(this.locale, 'apps.placeholder')}</p>
-        </div>
-      </div>
-    `;
+    return html`<day-one-panel .mode=${appId} .session=${this.day} .locale=${this.locale}
+      @day-action=${(event: CustomEvent<DayAction>) => this.dispatchDay(event.detail)}></day-one-panel>`;
   }
 }
 

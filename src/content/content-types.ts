@@ -14,5 +14,6 @@ export interface MailMessageDefinition {
   link?: {
     pageId: string;
     labelKey: TranslationKey;
+    confirmLabelKey?: TranslationKey;
   };
 }

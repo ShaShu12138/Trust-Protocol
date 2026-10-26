@@ -34,7 +34,8 @@ export function translate(
 }
 
 export function getInitialLocale(): SupportedLocale {
-  const savedLocale = window.localStorage.getItem(STORAGE_KEY);
+  let savedLocale: string | null = null;
+  try { savedLocale = window.localStorage.getItem(STORAGE_KEY); } catch { /* Continue without saved settings. */ }
   if (isSupportedLocale(savedLocale)) return savedLocale;
 
   for (const requestedLocale of navigator.languages) {
@@ -46,7 +47,7 @@ export function getInitialLocale(): SupportedLocale {
 }
 
 export function persistLocale(locale: SupportedLocale): void {
-  window.localStorage.setItem(STORAGE_KEY, locale);
+  try { window.localStorage.setItem(STORAGE_KEY, locale); } catch { /* The active locale still works in memory. */ }
   document.documentElement.lang = locale;
 }
 

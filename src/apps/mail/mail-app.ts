@@ -7,6 +7,7 @@ import {
   type SupportedLocale,
 } from '../../localization/i18n';
 import { assetUrl } from '../../ui/asset-url';
+import { REPORT_REASONS, type ReportReason } from '../../game/day-one-session';
 import { MailSession, type MailSessionSnapshot } from './mail-session';
 
 interface MailActionDetail {
@@ -49,6 +50,7 @@ export class MailApp extends LitElement {
     .sender-address { margin: 8px 0 0; padding: 8px 10px; color: #4b4e47; background: #efede5; border-radius: 5px; font: 11px/1.4 ui-monospace, monospace; overflow-wrap: anywhere; }
     .body { margin: 18px 0; color: #3f423c; font-size: 13px; line-height: 1.62; white-space: pre-line; }
     .link-button { display: inline-flex; min-height: 36px; align-items: center; padding: 0 14px; color: #fff; background: #315f51; border: 0; border-radius: 5px; cursor: pointer; font-weight: 700; }
+    .link-button:disabled { opacity:.5; cursor:default; }
     .link-button:hover { background: #254c40; }
     .empty { display: grid; height: 100%; place-items: center; color: #74766e; font-size: 12px; }
     button:focus-visible { outline: 3px solid #d29b36; outline-offset: -3px; }
@@ -63,6 +65,11 @@ export class MailApp extends LitElement {
   @property({ attribute: false }) messages: readonly MailMessageDefinition[] = [];
   @property({ attribute: false }) readMessageIds: readonly string[] = [];
   @property({ attribute: false }) locale: SupportedLocale = 'en';
+  @property({ type: Boolean }) linksEnabled = true;
+  @property({ type: Boolean }) markingEnabled = false;
+  @property() markedMessageId = '';
+  @state() private marking = false;
+  @state() private reportReason: ReportReason | '' = '';
 
   @state() private sessionState: MailSessionSnapshot = {
     selectedMessageId: null,
@@ -77,6 +84,14 @@ export class MailApp extends LitElement {
       this.session = new MailSession(this.messages, this.readMessageIds);
       this.sessionState = this.session.snapshot;
       this.emitUnreadState();
+    }
+  }
+
+  protected updated(changed: Map<PropertyKey, unknown>): void {
+    if (changed.has('markedMessageId') && this.markedMessageId) {
+      const stamp = this.renderRoot.querySelector<HTMLElement>('.stamp');
+      stamp?.scrollIntoView({ block: 'center' });
+      stamp?.focus({ preventScroll: true });
     }
   }
 
@@ -131,26 +146,33 @@ export class MailApp extends LitElement {
   }
 
   private renderMessage(message: MailMessageDefinition) {
-    const detailsVisible = this.sessionState.senderDetailsMessageId === message.id;
     return html`
       <article class="reader" aria-labelledby="mail-subject">
         <h2 id="mail-subject">${translate(this.locale, message.subjectKey)}</h2>
+        ${this.markedMessageId === message.id ? html`<p class="stamp" tabindex="-1" role="status" style="display:inline-block;border:3px solid #9b4239;color:#9b4239;padding:10px 18px;font-weight:bold;transform:rotate(-4deg)">${translate(this.locale, 'linear.stamp')}</p>` : nothing}
         <div class="sender-row">
           <strong>${translate(this.locale, message.senderNameKey)}</strong>
           <time datetime=${message.timestamp}>${this.formatFullDate(message.timestamp)}</time>
-          <button
-            class="details-button"
-            type="button"
-            aria-expanded=${detailsVisible}
-            @click=${() => this.toggleSenderDetails(message.id)}
-          >${translate(this.locale, detailsVisible ? 'mail.hideSenderDetails' : 'mail.showSenderDetails')}</button>
         </div>
-        ${detailsVisible ? html`<p class="sender-address">${translate(this.locale, 'mail.fromAddress', { address: message.senderAddress })}</p>` : nothing}
+        <p class="sender-address">${translate(this.locale, 'mail.fromAddress', { address: message.senderAddress })}</p>
         <p class="body">${translate(this.locale, message.bodyKey)}</p>
         ${message.link ? html`
-          <button class="link-button" type="button" @click=${() => this.requestLink(message)}>
+          ${message.link.confirmLabelKey ? html`<button class="link-button" style="margin:0 8px 8px 0" type="button" ?disabled=${!this.linksEnabled} @click=${() => this.requestLink(message)}>${translate(this.locale, message.link.confirmLabelKey)}</button>` : nothing}
+          <button class="link-button" type="button" ?disabled=${!this.linksEnabled} @click=${() => this.requestLink(message)}>
             ${translate(this.locale, message.link!.labelKey)}
           </button>
+        ` : nothing}
+        ${this.markingEnabled && this.markedMessageId !== message.id ? html`
+          <section style="margin-top:24px;border-top:1px solid #bbb;padding-top:16px">
+            ${!this.marking ? html`<button class="link-button" @click=${() => { this.marking = true; }}>${translate(this.locale, 'linear.flag')}</button>` : html`
+              <fieldset><legend>${translate(this.locale, 'linear.reason')}</legend>
+              ${REPORT_REASONS.map(reason => html`<label style="display:block;margin:10px 0;font-size:13px"><input type="radio" name="reason" .value=${reason} ?checked=${this.reportReason === reason} @change=${() => { this.reportReason = reason; }}> ${translate(this.locale, `report.reason.${reason}`)}</label>`)}
+              </fieldset>
+              <button class="link-button" ?disabled=${!this.reportReason} @click=${() => {
+                if (this.reportReason) this.emit('mail-message-flagged', { messageId: message.id, reason: this.reportReason });
+              }}>${translate(this.locale, 'report.send')}</button>
+            `}
+          </section>
         ` : nothing}
       </article>
     `;
@@ -163,16 +185,8 @@ export class MailApp extends LitElement {
     this.emit<MailActionDetail>('mail-message-opened', { messageId });
   }
 
-  private toggleSenderDetails(messageId: string): void {
-    if (!this.session) return;
-    this.sessionState = this.session.toggleSenderDetails(messageId);
-    if (this.sessionState.senderDetailsMessageId === messageId) {
-      this.emit<MailActionDetail>('mail-sender-inspected', { messageId });
-    }
-  }
-
   private requestLink(message: MailMessageDefinition): void {
-    if (!message.link) return;
+    if (!message.link || !this.linksEnabled) return;
     this.emit<MailLinkDetail>('mail-link-requested', {
       messageId: message.id,
       pageId: message.link.pageId,

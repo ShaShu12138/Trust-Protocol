@@ -33,14 +33,14 @@ export const APP_DEFINITIONS: Readonly<Record<AppId, AppDefinition>> = {
     id: 'browser',
     titleKey: 'apps.browser.title',
     iconPath: assetUrl('/assets/applications/browser/app-browser.svg'),
-    initialWindow: { x: 420, y: 190, width: 480, height: 330 },
+    initialWindow: { x: 420, y: 130, width: 620, height: 480 },
     minimumWindowSize: { width: 420, height: 300 },
   },
   bank: {
     id: 'bank',
     titleKey: 'apps.bank.title',
     iconPath: assetUrl('/assets/applications/bank/app-bank.svg'),
-    initialWindow: { x: 210, y: 105, width: 480, height: 330 },
+    initialWindow: { x: 210, y: 105, width: 620, height: 480 },
     minimumWindowSize: { width: 420, height: 320 },
   },
   phone: {

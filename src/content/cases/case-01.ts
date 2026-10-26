@@ -4,7 +4,7 @@ export const CASE_01_MAIL_MESSAGES: readonly MailMessageDefinition[] = [
   {
     id: 'mail.nova-security-review',
     senderNameKey: 'case01.mail.nova.sender',
-    senderAddress: 'security@nova-bank-review.example',
+    senderAddress: 'security@nova-alerts.net',
     subjectKey: 'case01.mail.nova.subject',
     previewKey: 'case01.mail.nova.preview',
     bodyKey: 'case01.mail.nova.body',
@@ -12,6 +12,7 @@ export const CASE_01_MAIL_MESSAGES: readonly MailMessageDefinition[] = [
     link: {
       pageId: 'page.nova-review-fake',
       labelKey: 'case01.mail.nova.cta',
+      confirmLabelKey: 'case01.mail.nova.confirm',
     },
   },
   {

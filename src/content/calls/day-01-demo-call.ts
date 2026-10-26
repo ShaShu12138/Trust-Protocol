@@ -6,14 +6,13 @@ const unknownPortrait = assetUrl('/assets/system/icons/contact-unknown.svg');
 
 export const DAY_01_SUSPICIOUS_CALL: IncomingCallPresentation = {
   id: 'call.day01.suspicious-bank-support',
-  phoneNumber: '+31 20 555 0148',
+  phoneNumber: '+31 20 794 0148',
   portraitPath: unknownPortrait,
 };
 
 export const DAY_01_POLICE_CALL: IncomingCallPresentation = {
   id: 'call.day01.police-warning',
-  callerNameKey: 'day01.call.police.name',
-  phoneNumber: '+31 88 662 2880',
+  phoneNumber: '112',
   portraitPath: assetUrl('/assets/system/icons/system-notification.svg'),
 };
 

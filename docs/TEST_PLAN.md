@@ -1,5 +1,9 @@
 # Trust Protocol — Test and Acceptance Plan
 
+> 最新第一天规则：以 [DAY_01_DESIGN.md](DAY_01_DESIGN.md) 的线性版本为准。必须点击链接触发警方，信息在故事开始前已泄露，官网核验后标注邮件即结束。此前第一天自由调查、转账补救、任意结束及 v1 存档描述已被替换；当前使用 v2 存档，28 项测试通过。
+
+> Day 1 playtest validation (2026-10-26): 36 unit tests pass, including 21 Day 1 transition/save cases; build and three-locale key parity pass. Browser checks cover recovery, independent verification, ignored requests, required police warning, reload and replay. See [DAY_01_PLAYTEST.md](DAY_01_PLAYTEST.md) for limits; the older status section below is historical.
+
 ## Purpose
 
 This document defines evidence required to call the first playable version complete. Passing a build alone is not sufficient.

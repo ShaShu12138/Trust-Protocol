@@ -27,9 +27,10 @@ I would rather list this honestly than describe the design document.
 | Phone — incoming-call state machine (ringing → connected → retry → escalation) | Working |
 | Dialogue layer — portraits, typewriter text, keyboard focus trap | Working |
 | Localisation — English, Simplified Chinese, Dutch | Working |
-| Day 1 scripted flow (case 01, calls, police branch) | Playable prototype |
-| Bank and Browser windows | Shells with empty states |
-| Save / load, end-of-day review, days 2–5 | Designed, not built (`docs/`) |
+| Day 1 — guided call, mandatory email click, police interruption, website comparison and suspicious-mail stamp | Complete linear playtest |
+| Browser, Bank and Phone | Local website; Bank is read-only, Phone provides a missed-call callback |
+| Day 1 save / resume, ending and replay | Working; separate v2 browser-local save |
+| Days 2–5 and full campaign progression | Designed, not built (`docs/`) |
 
 ## How it is built
 
@@ -55,10 +56,9 @@ src/
 
 | | |
 |---|---|
-| Unit tests | **15 passing** (`vitest`) — window manager and mail session |
-| Localisation | **63 keys × 3 locales**, zero missing, zero orphaned |
-| Production build | **74.4 kB JavaScript, 22.6 kB gzipped** |
-| Source size | **21 files, 2,132 lines** |
+| Unit tests | **28 passing** (`vitest`) — window manager, mail session, Day 1 linear progression and save validation |
+| Localisation | **100 keys × 3 locales**, matching key sets |
+| Production build | **93.32 kB JavaScript, 28.87 kB gzipped** |
 | TypeScript | `strict`, `noUnusedLocals`, `noUnusedParameters` |
 | Accessibility | ARIA labelling, keyboard focus trapping in the dialogue layer, `prefers-reduced-motion` fallback |
 
@@ -67,11 +67,15 @@ src/
 ```bash
 npm install
 npm run dev      # local dev server
-npm test         # 15 unit tests
+npm test         # 28 unit tests
 npm run build    # tsc + vite build → dist/
 ```
 
 ## Documentation
+
+- [Day 1 playtest](docs/DAY_01_PLAYTEST.md) — current build, local launch, verification and known limits.
+
+- [Five-day playable specification](docs/PLAYABLE_CAMPAIGN_SPEC.md) — concrete mechanics, daily routes, recovery, and delivery checks (design, not yet implemented).
 
 The design work is in `docs/` — this is a campaign game, not a single scene:
 

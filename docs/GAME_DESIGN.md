@@ -1,5 +1,11 @@
 # Trust Protocol — Game Design
 
+> 最新第一天规则：以 [DAY_01_DESIGN.md](DAY_01_DESIGN.md) 的线性版本为准。必须点击链接触发警方，信息在故事开始前已泄露，官网核验后标注邮件即结束。此前第一天自由调查、转账补救、任意结束及 v1 存档描述已被替换；当前使用 v2 存档，28 项测试通过。
+
+> Current playable build (2026-10-26): [DAY_01_PLAYTEST.md](DAY_01_PLAYTEST.md) records the implemented Day 1 loop, local save and daily review. Days 2–5 remain planned; implementation-status lists below predate this slice.
+
+> Five-day implementation specification (2026-10-26): [PLAYABLE_CAMPAIGN_SPEC.md](PLAYABLE_CAMPAIGN_SPEC.md). It defines concrete actions, daily routes, and acceptance checks, and supersedes conflicting planned behavior below. It is a design, not an implementation status report.
+
 ## High concept
 
 Trust Protocol is a narrative desktop investigation game about verifying financial and identity-related claims under uncertainty. Across five consecutive days, the player uses fictional Mail, Browser, Bank, and Phone applications to handle ordinary tasks, suspicious requests, and the consequences of earlier decisions.

@@ -1,5 +1,9 @@
 # Trust Protocol — UI Flow
 
+> 最新第一天规则：以 [DAY_01_DESIGN.md](DAY_01_DESIGN.md) 的线性版本为准。必须点击链接触发警方，信息在故事开始前已泄露，官网核验后标注邮件即结束。此前第一天自由调查、转账补救、任意结束及 v1 存档描述已被替换；当前使用 v2 存档，28 项测试通过。
+
+> Five-day target update (2026-10-26): [PLAYABLE_CAMPAIGN_SPEC.md](PLAYABLE_CAMPAIGN_SPEC.md) takes precedence for the opening, call retries, and end-day confirmation. The target now enters Day 1 without a mandatory tutorial; help remains optional.
+
 ## Purpose
 
 This document defines page-level and desktop-level navigation for the five-day campaign. Campaign structure belongs in `FIVE_DAY_CAMPAIGN.md`; Day 1 branching belongs in `DAY_01_DESIGN.md`.

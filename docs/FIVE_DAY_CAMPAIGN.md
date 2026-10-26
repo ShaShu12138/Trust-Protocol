@@ -1,5 +1,9 @@
 # Trust Protocol — Five-Day Campaign
 
+> 最新第一天规则：以 [DAY_01_DESIGN.md](DAY_01_DESIGN.md) 的线性版本为准。必须点击链接触发警方，信息在故事开始前已泄露，官网核验后标注邮件即结束。此前第一天自由调查、转账补救、任意结束及 v1 存档描述已被替换；当前使用 v2 存档，28 项测试通过。
+
+> Concrete five-day rules (2026-10-26): [PLAYABLE_CAMPAIGN_SPEC.md](PLAYABLE_CAMPAIGN_SPEC.md). Use that specification for exact flag semantics, daily scenarios, transaction timing, and final profiles where this earlier outline differs.
+
 ## Purpose
 
 This document is the authoritative campaign-level design. The game is one continuous five-day experience, not a menu of five unrelated cases. Each day contains ordinary communication, legitimate tasks, and one principal fraud-related situation. Player choices create immediate consequences and a small number of persistent conditions that alter later days.
