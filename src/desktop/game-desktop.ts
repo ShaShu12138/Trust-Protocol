@@ -413,8 +413,8 @@ export class GameDesktop extends LitElement {
         ` : null}
         ${this.day.call === 'connected' || (['police', 'callback'].includes(this.day.phase) && !this.day.call) ? html`
           <dialogue-panel non-modal .nonModal=${true} .presentation=${this.callDialogue} .locale=${this.locale}
-            @dialogue-primary=${() => this.dispatchDay(this.day.phase === 'intro' && this.day.line === 0 ? 'mine' : 'next')}
-            @dialogue-secondary=${() => this.dispatchDay('not-mine')}></dialogue-panel>
+            @dialogue-primary=${() => this.dispatchDay(this.day.phase === 'intro' && this.day.line === 0 ? 'not-mine' : 'next')}
+            @dialogue-secondary=${() => this.dispatchDay('mine')}></dialogue-panel>
         ` : null}
         ${this.day.phase === 'review' && !this.restartConfirm ? html`
           <day-one-panel mode="review" .session=${this.day} .locale=${this.locale}

@@ -24,8 +24,8 @@ export const DAY_01_SUSPICIOUS_CALL_LINES: readonly DialoguePresentation[] = [
     speakerKey: 'day01.call.unknownSpeaker',
     bodyKey: 'day01.call.suspicious.intro',
     imagePath: unknownPortrait,
-    primaryAction: { id: 'mine', labelKey: 'day01.call.mine' },
-    secondaryAction: { id: 'not-mine', labelKey: 'day01.call.notMine' },
+    primaryAction: { id: 'not-mine', labelKey: 'day01.call.notMine' },
+    secondaryAction: { id: 'mine', labelKey: 'day01.call.mine' },
   },
   {
     id: 'dialogue.day01.suspicious.instruction',
