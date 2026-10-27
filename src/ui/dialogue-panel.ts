@@ -15,6 +15,7 @@ export interface DialoguePresentation {
   eyebrowKey: TranslationKey;
   speakerKey: TranslationKey;
   bodyKey: TranslationKey;
+  shakeEmphasis?: boolean;
   imagePath?: string;
   imageAltKey?: TranslationKey;
   step?: number;
@@ -45,6 +46,8 @@ export class DialoguePanel extends LitElement {
     .progress { margin-left: auto; font-variant-numeric: tabular-nums; }
     h2 { margin: 7px 0 5px; font-family: Georgia, serif; font-size: 23px; font-weight: 600; line-height: 1.15; }
     .body { max-width: 62ch; margin: 4px 0 18px; color: #484c45; font-size: 14px; line-height: 1.58; white-space: pre-line; }
+    .body strong { color:#253b32;font-weight:800; }
+    .body strong.warning { display:inline-block;color:#a12d25;font-size:1.35em; }
     .actions { display: flex; justify-content: flex-end; gap: 9px; }
     button { min-height: 38px; padding: 0 16px; border-radius: 6px; cursor: pointer; font: 700 12px/1 system-ui, sans-serif; }
     .secondary { color: #444841; background: transparent; border: 1px solid #aaa99f; }
@@ -58,9 +61,13 @@ export class DialoguePanel extends LitElement {
       .portrait { display: none; }
       .content { padding: 18px; }
       h2 { font-size: 20px; }
-      .actions { flex-wrap: wrap; }
+      .body strong { color:#253b32;font-weight:800; }
+    .body strong.warning { display:inline-block;color:#a12d25;font-size:1.35em; }
+    .actions { flex-wrap: wrap; }
     }
     @media (prefers-reduced-motion: no-preference) {
+      .warning { animation: shake 550ms ease-in-out; }
+      @keyframes shake { 0%,100% { transform:translateX(0); } 15%,45%,75% { transform:translateX(-5px) rotate(-2deg); } 30%,60%,90% { transform:translateX(5px) rotate(2deg); } }
       .panel { animation: enter 180ms ease-out; }
       @keyframes enter { from { opacity: 0; transform: translateY(12px); } }
     }
@@ -106,7 +113,7 @@ export class DialoguePanel extends LitElement {
               : nothing}
           </div>
           <h2 id="dialogue-speaker">${translate(this.locale, item.speakerKey)}</h2>
-          <p class="body" id="dialogue-body">${translate(this.locale, item.bodyKey)}</p>
+          <p class="body" id="dialogue-body">${translate(this.locale, item.bodyKey).split(/(\*\*[^*]+\*\*)/g).map(part => part.startsWith('**') && part.endsWith('**') ? html`<strong class=${item.shakeEmphasis ? 'warning' : ''}>${part.slice(2, -2)}</strong>` : part)}</p>
           <div class="actions">
             ${item.secondaryAction
               ? html`<button class="secondary" type="button" @click=${() => this.emitAction('dialogue-secondary', item.secondaryAction!)}>${translate(this.locale, item.secondaryAction.labelKey)}</button>`

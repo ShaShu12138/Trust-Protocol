@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { browserAddress, SEARCH_URL, visit } from './browser-navigation';
+import { browserAddress, SEARCH_URL, visit, matchesBankSearch } from './browser-navigation';
 describe('browser address navigation', () => {
   it.each(['Nova', 'Nova银行', '银行', 'nova bank'])('searches %s', input => {
     const url = new URL(browserAddress(input));
@@ -21,5 +21,14 @@ describe('browser address navigation', () => {
   it('handles empty and malformed address input', () => {
     expect(browserAddress('  ')).toBe('about:blank');
     expect(browserAddress('https://')).toContain(SEARCH_URL);
+  });
+});
+
+describe('bank search whole words', () => {
+  it.each(['Nova', 'NOVA', 'Nova bank', 'Nova,bank', 'Nova，银行', '(Nova)', '银行', 'Nova银行', 'banking', '查证 Nova 官网'])('matches %s', query => {
+    expect(matchesBankSearch(query)).toBe(true);
+  });
+  it.each(['Novaasdgisaf', 'asdgNova', 'novabank', 'bankxyz', 'xx银行xx', '银行诈骗', 'Nova123', '', 'nothing'])('rejects partial keyword %s', query => {
+    expect(matchesBankSearch(query)).toBe(false);
   });
 });

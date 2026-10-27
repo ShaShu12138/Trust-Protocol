@@ -12,3 +12,8 @@ export function browserAddress(input: string): string {
 export function visit(history: readonly string[], index: number, url: string): string[] {
   return [...history.slice(0, index + 1), url];
 }
+
+export function matchesBankSearch(query: string): boolean {
+  const words = query.normalize('NFKC').toLowerCase().split(/[\p{P}\p{Z}\s]+/u);
+  return words.some(word => ['nova', 'bank', 'banking', '银行', 'nova银行'].includes(word));
+}

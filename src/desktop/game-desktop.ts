@@ -413,7 +413,8 @@ export class GameDesktop extends LitElement {
         ` : null}
         ${this.day.call === 'connected' || (['police', 'callback'].includes(this.day.phase) && !this.day.call) ? html`
           <dialogue-panel non-modal .nonModal=${true} .presentation=${this.callDialogue} .locale=${this.locale}
-            @dialogue-primary=${() => this.dispatchDay('next')}></dialogue-panel>
+            @dialogue-primary=${() => this.dispatchDay(this.day.phase === 'intro' && this.day.line === 0 ? 'mine' : 'next')}
+            @dialogue-secondary=${() => this.dispatchDay('not-mine')}></dialogue-panel>
         ` : null}
         ${this.day.phase === 'review' && !this.restartConfirm ? html`
           <day-one-panel mode="review" .session=${this.day} .locale=${this.locale}
@@ -497,6 +498,7 @@ export class GameDesktop extends LitElement {
     const lines = ['day01.call.police.stop', 'linear.police.leak', 'linear.police.method', 'linear.police.mark'] as const;
     return { id: 'police.' + this.day.line, kind: 'call', eyebrowKey: 'dialogue.kind.call',
       speakerKey: 'day01.call.police.name', bodyKey: lines[this.day.line],
+      shakeEmphasis: this.day.line === 0,
       primaryAction: {id:'continue', labelKey: this.day.line === 3 ? 'linear.check' : 'dialogue.continue'} };
   }
 
@@ -509,8 +511,11 @@ export class GameDesktop extends LitElement {
   private scheduleStory(): void {
     window.clearTimeout(this.repeatCallTimeout);
     window.clearTimeout(this.endingTimeout);
-    if (['intro', 'email'].includes(this.day.phase) && !this.day.call && !this.day.retryUsed) {
+    if (this.day.phase === 'intro' && !this.day.call && !this.day.retryUsed) {
       this.repeatCallTimeout = window.setTimeout(() => this.dispatchDay('retry'), 3000);
+    }
+    if (this.day.phase === 'intro' && this.day.line === 1 && this.day.call === 'connected') {
+      this.repeatCallTimeout = window.setTimeout(() => this.dispatchDay('next'), 6500);
     }
     if (this.day.phase === 'stamped') {
       this.endingTimeout = window.setTimeout(() => this.dispatchDay('callback'), 3500);

@@ -1,7 +1,7 @@
 import { LitElement, css, html } from 'lit';
 import { property, state } from 'lit/decorators.js';
 import { translate, type SupportedLocale, type TranslationKey } from '../localization/i18n';
-import { browserAddress, SEARCH_URL, visit } from './browser-navigation';
+import { browserAddress, SEARCH_URL, visit, matchesBankSearch } from './browser-navigation';
 import { newDayOne, type DayAction, type DayOneState } from '../game/day-one-session';
 
 export class DayOnePanel extends LitElement {
@@ -104,7 +104,7 @@ export class DayOnePanel extends LitElement {
       <div class="card">19/09 · Market Square · − € 38,65</div><div class="card">18/09 · Metro · − € 3,40</div>
       <p class="muted">${this.t('bank.updated')}</p></main></section>`;
     if (this.mode === 'phone') return html`<section class="page"><main><h1>${this.t('apps.phone.title')}</h1>
-      <p>${this.t('linear.phone')}</p>${['intro','email'].includes(s.phase) && !s.call ? html`<button @click=${() => this.act('retry')}>${this.t('linear.recall')}</button>` : ''}
+      <p>${this.t('linear.phone')}</p>${s.phase === 'intro' && !s.call ? html`<button @click=${() => this.act('retry')}>${this.t('linear.recall')}</button>` : ''}
     </main></section>`;
     const address = this.history[this.historyIndex];
     const isHome = address === 'about:blank';
@@ -129,7 +129,7 @@ export class DayOnePanel extends LitElement {
           <button>${this.t('search.submit')}</button>
         </form></div>
         ${isSearch ? html`<div class="search-filter">${this.t('search.all')} · ${search}</div>
-          ${/nova|bank|银行/i.test(search) ? html`
+          ${matchesBankSearch(search) ? html`
             <article class="result"><div class="muted">Nova Bank · https://www.novabank.nl</div><a href="https://www.novabank.nl" @click=${(event: Event) => go(event, 'https://www.novabank.nl')}>Nova Bank — ${this.t('site.tagline')}</a><p>${this.t('site.summary')}</p></article>
             <article class="result"><div class="muted">Daily Ledger · https://dailyledger.nl/economy/nova</div><a href="https://dailyledger.nl/economy/nova" @click=${(event: Event) => go(event, 'https://dailyledger.nl/economy/nova')}>${this.t('search.news')}</a><p>${this.t('search.news.body')}</p></article>
             <article class="result"><div class="muted">Money Guide · https://moneyguide.nl/banking</div><a href="https://moneyguide.nl/banking" @click=${(event: Event) => go(event, 'https://moneyguide.nl/banking')}>${this.t('search.compare')}</a><p>${this.t('search.compare.body')}</p></article>

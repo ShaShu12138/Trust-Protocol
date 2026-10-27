@@ -24,7 +24,8 @@ export const DAY_01_SUSPICIOUS_CALL_LINES: readonly DialoguePresentation[] = [
     speakerKey: 'day01.call.unknownSpeaker',
     bodyKey: 'day01.call.suspicious.intro',
     imagePath: unknownPortrait,
-    primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
+    primaryAction: { id: 'mine', labelKey: 'day01.call.mine' },
+    secondaryAction: { id: 'not-mine', labelKey: 'day01.call.notMine' },
   },
   {
     id: 'dialogue.day01.suspicious.instruction',
@@ -33,26 +34,9 @@ export const DAY_01_SUSPICIOUS_CALL_LINES: readonly DialoguePresentation[] = [
     speakerKey: 'day01.call.unknownSpeaker',
     bodyKey: 'day01.call.suspicious.instruction',
     imagePath: unknownPortrait,
-    primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
+    primaryAction: { id: 'continue', labelKey: 'call.hangUp' },
   },
-  {
-    id: 'dialogue.day01.suspicious.nag-one',
-    kind: 'call',
-    eyebrowKey: 'dialogue.kind.call',
-    speakerKey: 'day01.call.unknownSpeaker',
-    bodyKey: 'day01.call.suspicious.nagOne',
-    imagePath: unknownPortrait,
-    primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
-  },
-  {
-    id: 'dialogue.day01.suspicious.nag-two',
-    kind: 'call',
-    eyebrowKey: 'dialogue.kind.call',
-    speakerKey: 'day01.call.unknownSpeaker',
-    bodyKey: 'day01.call.suspicious.nagTwo',
-    imagePath: unknownPortrait,
-    primaryAction: { id: 'continue', labelKey: 'dialogue.continue' },
-  },
+
 ];
 
 export const DAY_01_POLICE_CALL_LINES: readonly DialoguePresentation[] = [
