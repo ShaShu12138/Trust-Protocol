@@ -152,5 +152,6 @@
   "browser.unavailable": "Deze pagina is niet bereikbaar",
   "search.all": "Alles",
   "day01.call.mine": "Ja, dat was ik",
-  "day01.call.notMine": "Nee, dat was ik niet"
+  "day01.call.notMine": "Nee, dat was ik niet",
+  "dialogue.reveal": "Volledige tekst tonen"
 }

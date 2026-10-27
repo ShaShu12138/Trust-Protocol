@@ -152,5 +152,6 @@
   "browser.unavailable": "This page cannot be reached",
   "search.all": "All",
   "day01.call.mine": "Yes, that was me",
-  "day01.call.notMine": "No, that was not me"
+  "day01.call.notMine": "No, that was not me",
+  "dialogue.reveal": "Show full text"
 }

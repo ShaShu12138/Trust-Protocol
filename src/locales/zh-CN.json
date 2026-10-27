@@ -152,5 +152,6 @@
   "browser.unavailable": "无法访问此网页",
   "search.all": "全部",
   "day01.call.mine": "是我本人操作的",
-  "day01.call.notMine": "不是我本人操作的"
+  "day01.call.notMine": "不是我本人操作的",
+  "dialogue.reveal": "立即显示完整句子"
 }

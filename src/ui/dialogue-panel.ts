@@ -1,6 +1,8 @@
 import { LitElement, css, html, nothing } from 'lit';
-import { property } from 'lit/decorators.js';
+import { property, state } from 'lit/decorators.js';
 import { translate, type SupportedLocale, type TranslationKey } from '../localization/i18n';
+
+import { dialogueTextParts, revealDialogue, type DialogueTextPart } from './dialogue-text';
 
 export type DialogueKind = 'tutorial' | 'hint' | 'call';
 
@@ -46,6 +48,10 @@ export class DialoguePanel extends LitElement {
     .progress { margin-left: auto; font-variant-numeric: tabular-nums; }
     h2 { margin: 7px 0 5px; font-family: Georgia, serif; font-size: 23px; font-weight: 600; line-height: 1.15; }
     .body { max-width: 62ch; margin: 4px 0 18px; color: #484c45; font-size: 14px; line-height: 1.58; white-space: pre-line; }
+    .body { display:grid; }
+    .body > span { grid-area:1 / 1; }
+    .body .reserve { visibility:hidden; }
+    .reveal { border:0;background:transparent;color:#63756c;font:12px system-ui;padding:0;min-height:28px;margin-bottom:8px;text-align:left; }
     .body strong { color:#253b32;font-weight:800; }
     .body strong.warning { display:inline-block;color:#a12d25;font-size:1.35em; }
     .actions { display: flex; justify-content: flex-end; gap: 9px; }
@@ -61,9 +67,7 @@ export class DialoguePanel extends LitElement {
       .portrait { display: none; }
       .content { padding: 18px; }
       h2 { font-size: 20px; }
-      .body strong { color:#253b32;font-weight:800; }
-    .body strong.warning { display:inline-block;color:#a12d25;font-size:1.35em; }
-    .actions { flex-wrap: wrap; }
+      .actions { flex-wrap: wrap; }
     }
     @media (prefers-reduced-motion: no-preference) {
       .warning { animation: shake 550ms ease-in-out; }
@@ -76,6 +80,48 @@ export class DialoguePanel extends LitElement {
   @property({ attribute: false }) presentation!: DialoguePresentation;
   @property({ attribute: false }) locale: SupportedLocale = 'en';
   @property({ type: Boolean, attribute: 'non-modal', reflect: true }) nonModal = false;
+
+  @state() private revealed = 0;
+  private parts: DialogueTextPart[] = [];
+  private characterCount = 0;
+  private textIdentity = '';
+  private revealTimer?: number;
+
+  protected willUpdate(): void {
+    if (!this.presentation) return;
+    const identity = `${this.presentation.id}:${this.locale}:${this.presentation.bodyKey}`;
+    if (identity === this.textIdentity) return;
+    this.textIdentity = identity;
+    window.clearInterval(this.revealTimer);
+    this.parts = dialogueTextParts(translate(this.locale, this.presentation.bodyKey));
+    this.characterCount = this.parts.reduce((count, part) => count + Array.from(part.text).length, 0);
+    const animate = this.presentation.kind === 'call' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.revealed = animate ? (this.presentation.shakeEmphasis ? Array.from(this.parts[0]?.text ?? '').length : 0) : this.characterCount;
+    if (this.revealed < this.characterCount) {
+      const initial = this.revealed;
+      const start = performance.now();
+      const duration = Math.min((this.characterCount - initial) * 30, 3500);
+      this.revealTimer = window.setInterval(() => {
+        this.revealed = Math.min(this.characterCount, initial + Math.floor((performance.now() - start) / duration * (this.characterCount - initial)));
+        if (this.revealed === this.characterCount) window.clearInterval(this.revealTimer);
+      }, 30);
+    }
+  }
+
+  disconnectedCallback(): void {
+    window.clearInterval(this.revealTimer);
+    super.disconnectedCallback();
+  }
+
+  private revealAll(): void {
+    window.clearInterval(this.revealTimer);
+    this.revealed = this.characterCount;
+  }
+
+  private renderBody(parts: readonly DialogueTextPart[]) {
+    return parts.map(part => part.strong
+      ? html`<strong class=${this.presentation.shakeEmphasis ? 'warning' : ''}>${part.text}</strong>` : part.text);
+  }
 
   protected firstUpdated(): void {
     this.focusPrimaryAction();
@@ -113,7 +159,11 @@ export class DialoguePanel extends LitElement {
               : nothing}
           </div>
           <h2 id="dialogue-speaker">${translate(this.locale, item.speakerKey)}</h2>
-          <p class="body" id="dialogue-body">${translate(this.locale, item.bodyKey).split(/(\*\*[^*]+\*\*)/g).map(part => part.startsWith('**') && part.endsWith('**') ? html`<strong class=${item.shakeEmphasis ? 'warning' : ''}>${part.slice(2, -2)}</strong>` : part)}</p>
+          <p class="body" id="dialogue-body" aria-label=${this.parts.map(part => part.text).join('')} @click=${this.revealAll}>
+            <span class="reserve" aria-hidden="true">${this.renderBody(this.parts)}</span>
+            <span aria-hidden="true">${this.renderBody(revealDialogue(this.parts, this.revealed))}</span>
+          </p>
+          ${this.revealed < this.characterCount ? html`<button class="reveal" @click=${this.revealAll}>${translate(this.locale, 'dialogue.reveal')}</button>` : nothing}
           <div class="actions">
             ${item.secondaryAction
               ? html`<button class="secondary" type="button" @click=${() => this.emitAction('dialogue-secondary', item.secondaryAction!)}>${translate(this.locale, item.secondaryAction.labelKey)}</button>`
@@ -151,6 +201,7 @@ export class DialoguePanel extends LitElement {
   }
 
   private emitAction(name: string, action: DialogueActionDefinition): void {
+    if (this.revealed < this.characterCount) { this.revealAll(); return; }
     this.dispatchEvent(new CustomEvent<DialogueActionDetail>(name, {
       detail: { presentationId: this.presentation.id, actionId: action.id },
       bubbles: true,
